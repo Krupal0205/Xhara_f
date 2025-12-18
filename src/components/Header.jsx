@@ -75,7 +75,9 @@ const Header = ({ onContactClick }) => {
       name: 'Men',
       submenu: [
         "Men's Explore all",
-        "Men's Chain"
+        "Men's Chain",
+        "Men's Rings",
+        "Men's Bracelets"
       ]
     },
     { name: 'Gifting' },
