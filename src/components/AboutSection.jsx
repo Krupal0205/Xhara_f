@@ -3,7 +3,7 @@ import aboutVideo from '../image/832e37d57af248858c09914907f9845b.HD-720p-2.1Mbp
 import commitmentImage from '../image/Screenshot 2025-12-09 223517.png';
 
 const AboutSection = () => {
-  return (
+  return ( 
     <section className="bg-black pt-8 sm:pt-12 md:pt-20 w-full">
       <div className="w-full px-3 sm:px-4 md:px-6">
         <div className="max-w-4xl mx-auto text-center">
