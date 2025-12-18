@@ -28,6 +28,8 @@ export function AddProductPanel() {
   const [description, setDescription] = React.useState("");
   const [originalPrice, setOriginalPrice] = React.useState("");
   const [salePrice, setSalePrice] = React.useState("");
+  const [ringSizes, setRingSizes] = React.useState([]);
+  const [includeInGift, setIncludeInGift] = React.useState(false);
 
   React.useEffect(() => {
     if (openAddProduct) {
@@ -57,6 +59,8 @@ export function AddProductPanel() {
     setDescription("");
     setOriginalPrice("");
     setSalePrice("");
+    setRingSizes([]);
+    setIncludeInGift(false);
   }, [selectedSubCategory]);
 
   // Handle image upload
@@ -106,6 +110,41 @@ export function AddProductPanel() {
     return [];
   };
 
+  // Check if selected sub-category should show additional fields
+  const shouldShowAdditionalFields = () => {
+    if (selectedCategory === "women") {
+      return (
+        selectedSubCategory === "womens-bracelets" ||
+        selectedSubCategory === "womens-chain" ||
+        selectedSubCategory === "womens-earrings" ||
+        selectedSubCategory === "womens-rings"
+      );
+    } else if (selectedCategory === "men") {
+      return (
+        selectedSubCategory === "mens-bracelets" ||
+        selectedSubCategory === "mens-chain" ||
+        selectedSubCategory === "mens-rings"
+      );
+    }
+    return false;
+  };
+
+  // Handle ring size selection (multi-select)
+  const handleRingSizeChange = (size) => {
+    setRingSizes((prev) => {
+      if (prev.includes(size)) {
+        return prev.filter((s) => s !== size);
+      } else {
+        return [...prev, size];
+      }
+    });
+  };
+
+  // Ring size options
+  const ringSizeOptions = [
+    "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12"
+  ];
+
   return (
     <aside
       className={`fixed top-0 right-0 z-50 h-screen w-[500px] bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
@@ -136,8 +175,8 @@ export function AddProductPanel() {
           </Typography>
           <Select
             label="Select Category"
-            value={selectedCategory}
-            onChange={(val) => setSelectedCategory(val)}
+            value={selectedCategory || undefined}
+            onChange={(val) => setSelectedCategory(val || "")}
           >
             <Option value="women">Women</Option>
             <Option value="men">Men</Option>
@@ -148,9 +187,10 @@ export function AddProductPanel() {
             Sub Category
           </Typography>
           <Select
+            key={selectedCategory}
             label="Select Sub Category"
-            value={selectedSubCategory}
-            onChange={(val) => setSelectedSubCategory(val)}
+            value={selectedSubCategory || undefined}
+            onChange={(val) => setSelectedSubCategory(val || "")}
             disabled={!selectedCategory}
           >
             {getSubCategories().map((subCat) => (
@@ -160,7 +200,7 @@ export function AddProductPanel() {
             ))}
           </Select>
         </div>
-        {selectedCategory === "women" && selectedSubCategory === "womens-bracelets" && (
+        {shouldShowAdditionalFields() && (
           <div className="mb-6">
             <Typography variant="h6" color="blue-gray" className="mb-3">
               Product Images
@@ -239,7 +279,7 @@ export function AddProductPanel() {
             onChange={(e) => setOriginalPrice(e.target.value)}
           />
         </div>
-        {selectedCategory === "women" && selectedSubCategory === "womens-bracelets" && (
+        {shouldShowAdditionalFields() && (
           <>
             <div className="mb-6">
               <Typography variant="h6" color="blue-gray" className="mb-3">
@@ -315,7 +355,71 @@ export function AddProductPanel() {
                 className="w-full px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
             </div>
+            {((selectedCategory === "women" && selectedSubCategory === "womens-rings") ||
+              (selectedCategory === "men" && selectedSubCategory === "mens-rings")) && (
+              <div className="mb-6">
+                <Typography variant="h6" color="blue-gray" className="mb-3">
+                  Ring Size
+                </Typography>
+                <div className="border border-gray-300 rounded-lg p-3 min-h-[100px] max-h-[200px] overflow-y-auto">
+                  {ringSizeOptions.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">No sizes available</p>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {ringSizeOptions.map((size) => (
+                        <label
+                          key={size}
+                          className="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={ringSizes.includes(size)}
+                            onChange={() => handleRingSizeChange(size)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">{size}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {ringSizes.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="text-xs text-gray-600">Selected sizes:</span>
+                    {ringSizes.map((size) => (
+                      <span
+                        key={size}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >
+                        {size}
+                        <button
+                          onClick={() => handleRingSizeChange(size)}
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          <XMarkIcon className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
+        )}
+        {(selectedCategory === "women" || selectedCategory === "men") && selectedSubCategory && (
+          <div className="mb-6">
+            <label className="flex items-center cursor-pointer p-3 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <input
+                type="checkbox"
+                checked={includeInGift}
+                onChange={(e) => setIncludeInGift(e.target.checked)}
+                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-3 text-sm font-medium text-gray-700">
+                Include in Gift Section
+              </span>
+            </label>
+          </div>
         )}
         <div className="mt-8 flex flex-col gap-4">
           <Button variant="gradient" fullWidth>

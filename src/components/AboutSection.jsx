@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import aboutVideo from '../image/832e37d57af248858c09914907f9845b.HD-720p-2.1Mbps-31452296.mp4';
 import commitmentImage from '../image/Screenshot 2025-12-09 223517.png';
 
 const AboutSection = () => {
+  const navigate = useNavigate();
   return ( 
     <section className="bg-black pt-8 sm:pt-12 md:pt-20 w-full">
       <div className="w-full px-3 sm:px-4 md:px-6">
@@ -14,7 +16,10 @@ const AboutSection = () => {
             and respond to your questions and requests as quickly as we can. Like the whole team of silver lab Team 
             always goes the extra mile and loves finding the perfect solution to make you happy.
           </p>
-          <button className="px-4 sm:px-6 py-2 sm:py-3 bg-black text-white border border-white rounded-lg hover:bg-gray-900 transition-colors mb-6 sm:mb-8 text-sm sm:text-base">
+          <button 
+            onClick={() => navigate('/contact')}
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-black text-white border border-white rounded-lg hover:bg-gray-900 transition-colors mb-6 sm:mb-8 text-sm sm:text-base"
+          >
             Learn more
           </button>
         </div>
