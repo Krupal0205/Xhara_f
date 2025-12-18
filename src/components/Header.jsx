@@ -444,7 +444,7 @@ const Header = ({ onContactClick }) => {
                           setIsLoginOpen(false);
                           setEmail('');
                           setPassword('');
-                          navigate('/dashboard/home');
+                          navigate('/dashboard/admin/home');
                         } else {
                           // Regular user login
                           console.log('Logging in:', email);
