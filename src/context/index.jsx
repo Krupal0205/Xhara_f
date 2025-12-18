@@ -27,6 +27,9 @@ export function reducer(state, action) {
     case "OPEN_ADD_PRODUCT": {
       return { ...state, openAddProduct: action.value };
     }
+    case "OPEN_ADD_BLOG": {
+      return { ...state, openAddBlog: action.value };
+    }
     case "SET_NOTIFICATIONS_ENABLED": {
       return { ...state, notificationsEnabled: action.value };
     }
@@ -57,6 +60,7 @@ export function MaterialTailwindControllerProvider({ children }) {
     fixedNavbar: false,
     openConfigurator: false,
     openAddProduct: false,
+    openAddBlog: false,
     notificationsEnabled: true,
     emailNotifications: true,
     itemsPerPage: 10,
@@ -109,6 +113,8 @@ export const setOpenConfigurator = (dispatch, value) =>
   dispatch({ type: "OPEN_CONFIGURATOR", value });
 export const setOpenAddProduct = (dispatch, value) =>
   dispatch({ type: "OPEN_ADD_PRODUCT", value });
+export const setOpenAddBlog = (dispatch, value) =>
+  dispatch({ type: "OPEN_ADD_BLOG", value });
 export const setNotificationsEnabled = (dispatch, value) =>
   dispatch({ type: "SET_NOTIFICATIONS_ENABLED", value });
 export const setEmailNotifications = (dispatch, value) =>

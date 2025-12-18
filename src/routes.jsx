@@ -5,8 +5,9 @@ import {
   ShoppingBagIcon,
   ShoppingCartIcon,
   InformationCircleIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/solid";
-import { Home, User, Profile, Tables, Notifications } from "@/pages/dashboard";
+import { Home, User, Profile, Tables, Notifications, Blogs } from "@/pages/dashboard";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -45,6 +46,12 @@ export const routes = [
         name: "notifications",
         path: "/notifications",
         element: <Notifications />,
+      },
+      {
+        icon: <DocumentTextIcon {...icon} />,
+        name: "blogs",
+        path: "/blogs",
+        element: <Blogs />,
       },
     ],
   },
