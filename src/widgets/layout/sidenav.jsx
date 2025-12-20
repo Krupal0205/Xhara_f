@@ -28,13 +28,7 @@ export function Sidenav({ brandImg, brandName, routes }) {
         className={`relative`}
       >
         <Link to="/" className="py-6 px-8 text-center flex flex-col items-center gap-2">
-          {brandImg && (
-            <img
-              src={brandImg}
-              alt="Logo"
-              className="h-12 w-auto object-contain"
-            />
-          )}
+          
           <Typography
             variant="h6"
             color={sidenavType === "dark" ? "white" : "blue-gray"}

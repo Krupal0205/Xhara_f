@@ -1,10 +1,27 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { API_ENDPOINTS } from '@/config/api';
 
-const Gifting = () => {
+const Products = () => {
+  const { category, subcategory } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if it's a special route (rings, chain, earrings, bracelets)
+  const isSpecialRoute = location.pathname.includes('/products/rings') || 
+                         location.pathname.includes('/products/chain') || 
+                         location.pathname.includes('/products/earrings') || 
+                         location.pathname.includes('/products/bracelets');
+  
+  // Get product type from special route
+  const getProductType = () => {
+    if (location.pathname.includes('/products/rings')) return 'rings';
+    if (location.pathname.includes('/products/chain')) return 'chain';
+    if (location.pathname.includes('/products/earrings')) return 'earrings';
+    if (location.pathname.includes('/products/bracelets')) return 'bracelets';
+    return null;
+  };
   const [availabilityFilter, setAvailabilityFilter] = useState('');
   const [priceFilter, setPriceFilter] = useState('');
   const [sortBy, setSortBy] = useState('best-selling');
@@ -14,13 +31,103 @@ const Gifting = () => {
   const [error, setError] = useState('');
   const productsPerPage = 12;
 
-  // Fetch products with includeInGift = true
+  // Map display names to API category/subcategory values
+  const getCategoryValue = (displayName) => {
+    if (displayName?.includes("Women's")) return 'women';
+    if (displayName?.includes("Men's")) return 'men';
+    return category || '';
+  };
+
+  const getSubCategoryValue = (displayName) => {
+    const mapping = {
+      "Women's Bracelets": "womens-bracelets",
+      "Women's Chain": "womens-chain",
+      "Women's Rings": "womens-rings",
+      "Women's Earrings": "womens-earrings",
+      "Men's Chain": "mens-chain",
+      "Men's Rings": "mens-rings",
+      "Men's Bracelets": "mens-bracelets",
+    };
+    return mapping[displayName] || subcategory || '';
+  };
+
+  // Fetch products based on category/subcategory or special route
   useEffect(() => {
-    const fetchGiftProducts = async () => {
+    const fetchProducts = async () => {
       try {
         setLoading(true);
         setError('');
-        const response = await fetch(`${API_ENDPOINTS.PRODUCTS.GET_ALL}?includeInGift=true&isActive=true`);
+        
+        // Build query params
+        const params = new URLSearchParams();
+        params.append('isActive', 'true');
+        
+        if (isSpecialRoute) {
+          // For special routes (rings, chain, earrings, bracelets), fetch both women's and men's
+          const productType = getProductType();
+          if (productType === 'rings') {
+            // Fetch both women's and men's rings
+            params.append('subCategory', 'womens-rings');
+            // We'll need to make two API calls or modify backend to accept multiple subcategories
+            // For now, let's fetch all products and filter client-side
+          } else if (productType === 'chain') {
+            params.append('subCategory', 'womens-chain');
+          } else if (productType === 'earrings') {
+            params.append('subCategory', 'womens-earrings');
+          } else if (productType === 'bracelets') {
+            params.append('subCategory', 'womens-bracelets');
+          }
+        } else {
+          if (category) {
+            params.append('category', category);
+          }
+          if (subcategory) {
+            params.append('subCategory', subcategory);
+          }
+        }
+        
+        // For special routes, we need to fetch both women's and men's products
+        if (isSpecialRoute) {
+          const productType = getProductType();
+          const subcategories = {
+            'rings': ['womens-rings', 'mens-rings'],
+            'chain': ['womens-chain', 'mens-chain'],
+            'earrings': ['womens-earrings'],
+            'bracelets': ['womens-bracelets', 'mens-bracelets']
+          };
+          
+          const allProducts = [];
+          for (const subcat of subcategories[productType] || []) {
+            const subParams = new URLSearchParams();
+            subParams.append('isActive', 'true');
+            subParams.append('subCategory', subcat);
+            
+            const response = await fetch(`${API_ENDPOINTS.PRODUCTS.GET_ALL}?${subParams.toString()}`);
+            const data = await response.json();
+            
+            if (data.success && data.data.products) {
+              allProducts.push(...data.data.products);
+            }
+          }
+          
+          // Map products
+          const mappedProducts = allProducts.map((product) => ({
+            id: product._id,
+            _id: product._id, // Keep _id for navigation
+            name: product.productName,
+            price: product.salePrice || product.originalPrice,
+            originalPrice: product.originalPrice,
+            salePrice: product.salePrice,
+            onSale: !!product.salePrice,
+            image: product.images && product.images.length > 0 ? product.images[0] : '',
+            tagline: product.tagline || null,
+          }));
+          setProducts(mappedProducts);
+          setLoading(false);
+          return;
+        }
+        
+        const response = await fetch(`${API_ENDPOINTS.PRODUCTS.GET_ALL}?${params.toString()}`);
         const data = await response.json();
 
         if (data.success) {
@@ -41,20 +148,41 @@ const Gifting = () => {
           setError(data.message || 'Failed to fetch products');
         }
       } catch (err) {
-        console.error('Fetch gift products error:', err);
+        console.error('Fetch products error:', err);
         setError('Network error. Please check if backend server is running.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchGiftProducts();
-  }, []);
+    fetchProducts();
+  }, [category, subcategory]);
 
   // Scroll to top on component mount and page change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentPage]);
+  }, [currentPage, category, subcategory]);
+
+  // Get page title
+  const getPageTitle = () => {
+    if (isSpecialRoute) {
+      const productType = getProductType();
+      if (productType) {
+        return productType.charAt(0).toUpperCase() + productType.slice(1);
+      }
+    }
+    if (subcategory) {
+      const subcategoryName = subcategory.replace(/^(womens-|mens-)/i, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const categoryName = category ? category.charAt(0).toUpperCase() + category.slice(1) : '';
+      return categoryName ? `${categoryName} ${subcategoryName}` : subcategoryName;
+    }
+    if (category) {
+      // Check if this is "Explore all" route (no subcategory means explore all)
+      const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+      return `${categoryName} All`;
+    }
+    return 'Products';
+  };
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
@@ -62,7 +190,6 @@ const Gifting = () => {
 
     // Apply availability filter
     if (availabilityFilter === 'in-stock') {
-      // All products are in stock for now
       filtered = filtered;
     } else if (availabilityFilter === 'out-of-stock') {
       filtered = [];
@@ -101,15 +228,13 @@ const Gifting = () => {
         return priceB - priceA;
       });
     } else if (sortBy === 'best-selling') {
-      // Keep original order for best selling
       filtered = filtered;
     } else if (sortBy === 'newest') {
-      // Reverse order for newest
       filtered = filtered.reverse();
     }
 
     return filtered;
-  }, [availabilityFilter, priceFilter, sortBy]);
+  }, [products, availabilityFilter, priceFilter, sortBy]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredAndSortedProducts.length / productsPerPage);
@@ -154,13 +279,19 @@ const Gifting = () => {
       <div className="container mx-auto px-4 sm:px-6 md:px-8">
         {/* Title */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6" style={{ fontFamily: "'Poppins', sans-serif" }}>
-          Gifting
+          {getPageTitle()}
         </h1>
 
         {/* Description */}
-        <p className="text-white text-sm sm:text-base md:text-lg mb-8 sm:mb-10 md:mb-12 leading-relaxed" style={{ fontFamily: "'Poppins', sans-serif" }}>
-          Celebrate every moment with thoughtful gifts from our silver jewelry gifting collection. Make this Diwali unforgettable with SilverLab's exclusive 925 sterling silver gifting collection. From elegant rings and pendants to thoughtful jewelry sets, each piece is crafted to express love, purity, and timeless elegance. Whether for family, friends, or someone special—gift them the sparkle of real 925 silver this festive season.
-        </p>
+        {(category || isSpecialRoute) && (
+          <p className="text-white text-sm sm:text-base md:text-lg mb-8 sm:mb-10 md:mb-12 leading-relaxed" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            {isSpecialRoute 
+              ? `Explore our complete collection of ${getProductType()}. From elegant women's designs to sophisticated men's styles, each piece is crafted with 925 sterling silver for timeless elegance and sophistication.`
+              : category === 'women' 
+              ? "Discover our exquisite collection of women's silver jewelry. From elegant bracelets and chains to stunning rings and earrings, each piece is crafted with 925 sterling silver to express timeless elegance and sophistication."
+              : "Explore our premium collection of men's silver jewelry. From classic chains and rings to sophisticated bracelets, each piece is crafted with 925 sterling silver for a refined and distinguished look."}
+          </p>
+        )}
 
         {/* Filter and Sort Bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 md:mb-10 pb-4 sm:pb-6">
@@ -231,7 +362,7 @@ const Gifting = () => {
         {!loading && !error && filteredAndSortedProducts.length === 0 && (
           <div className="text-center py-12">
             <p className="text-white text-lg" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              No gift products available at the moment.
+              No products available in this category.
             </p>
           </div>
         )}
@@ -240,66 +371,66 @@ const Gifting = () => {
         {!loading && !error && filteredAndSortedProducts.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-8 sm:mb-10 md:mb-12">
             {currentProducts.map((product) => (
-            <div 
-              key={product.id} 
-              onClick={() => {
-                navigate(`/product/${product._id || product.id}`);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="bg-black group cursor-pointer relative"
-            >
-              {/* Product Image */}
-              <div className="relative aspect-square overflow-hidden mb-3 sm:mb-4">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                {/* Sale Badge */}
-                {product.onSale && (
-                  <span className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 bg-red-500 text-white text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 rounded">
-                    Sale
-                  </span>
-                )}
-                {/* Vertical Tagline Text */}
-                {product.tagline && (
-                  <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10">
-                    <p
-                      className="text-white text-[10px] sm:text-xs font-medium"
-                      style={{
-                        writingMode: 'vertical-rl',
-                        textOrientation: 'mixed',
-                        transform: 'rotate(180deg)'
-                      }}
-                    >
-                      {product.tagline}
-                    </p>
-                  </div>
-                )}
-              </div>
+              <div 
+                key={product.id} 
+                onClick={() => {
+                  navigate(`/product/${product._id || product.id}`);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="bg-black group cursor-pointer relative"
+              >
+                {/* Product Image */}
+                <div className="relative aspect-square overflow-hidden mb-3 sm:mb-4">
+                  <img
+                    src={product.image || '/placeholder-image.jpg'}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  {/* Sale Badge */}
+                  {product.onSale && (
+                    <span className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 border border-white text-white text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 rounded">
+                      Sale
+                    </span>
+                  )}
+                  {/* Vertical Tagline Text */}
+                  {product.tagline && (
+                    <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10">
+                      <p
+                        className="text-white text-[10px] sm:text-xs font-medium"
+                        style={{
+                          writingMode: 'vertical-rl',
+                          textOrientation: 'mixed',
+                          transform: 'rotate(180deg)'
+                        }}
+                      >
+                        {product.tagline}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-              {/* Product Info */}
-              <div>
-                <h3 className="text-white text-sm sm:text-base font-medium mb-2 line-clamp-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                  {product.name}
-                </h3>
-                {product.onSale && product.originalPrice ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-white text-sm sm:text-base font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                      Rs. {product.salePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-gray-400 text-xs sm:text-sm line-through" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                      Rs. {product.originalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-white text-sm sm:text-base font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                    Rs. {product.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                )}
+                {/* Product Info */}
+                <div>
+                  <h3 className="text-white text-sm sm:text-base font-medium mb-2 line-clamp-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                    {product.name}
+                  </h3>
+                  {product.onSale && product.originalPrice ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-white text-sm sm:text-base font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                        Rs. {product.salePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                      <span className="text-gray-400 text-xs sm:text-sm line-through" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                        Rs. {product.originalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-white text-sm sm:text-base font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                      Rs. {product.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
         )}
 
@@ -368,5 +499,5 @@ const Gifting = () => {
   );
 };
 
-export default Gifting;
+export default Products;
 

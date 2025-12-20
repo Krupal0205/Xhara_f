@@ -12,12 +12,14 @@ import {
   useMaterialTailwindController,
   setOpenAddProduct,
 } from "@/context";
+import { API_ENDPOINTS } from "@/config/api";
 
 export function AddProductPanel() {
   const [controller, dispatch] = useMaterialTailwindController();
   const { openAddProduct } = controller;
   const [selectedCategory, setSelectedCategory] = React.useState("");
   const [selectedSubCategory, setSelectedSubCategory] = React.useState("");
+  const [productName, setProductName] = React.useState("");
   const [productImages, setProductImages] = React.useState([]);
   const [productFeatures, setProductFeatures] = React.useState({
     sterlingSilver: false,
@@ -30,46 +32,147 @@ export function AddProductPanel() {
   const [salePrice, setSalePrice] = React.useState("");
   const [ringSizes, setRingSizes] = React.useState([]);
   const [includeInGift, setIncludeInGift] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [success, setSuccess] = React.useState("");
+  const [editingProductId, setEditingProductId] = React.useState(null);
+  const isLoadingEditData = React.useRef(false);
 
   React.useEffect(() => {
     if (openAddProduct) {
       document.body.style.overflow = "hidden";
+      
+      // Check if editing a product
+      const editingProductStr = localStorage.getItem('editingProduct');
+      if (editingProductStr) {
+        try {
+          isLoadingEditData.current = true;
+          const editingProduct = JSON.parse(editingProductStr);
+          
+          // Set editing ID first
+          setEditingProductId(editingProduct._id);
+          
+          // Populate form with product data
+          setProductName(editingProduct.productName || "");
+          setOriginalPrice(editingProduct.originalPrice?.toString() || "");
+          setSalePrice(editingProduct.salePrice?.toString() || "");
+          setDescription(editingProduct.description || "");
+          setProductFeatures(editingProduct.features || {
+            sterlingSilver: false,
+            freeShipping: false,
+            hypoallergenic: false,
+            antiTarnish: false,
+          });
+          setRingSizes(editingProduct.ringSizes || []);
+          setIncludeInGift(editingProduct.includeInGift || false);
+          
+          // Set category and subcategory - set subcategory first, then category
+          // This prevents the subcategory reset useEffect from clearing it
+          if (editingProduct.subCategory) {
+            setSelectedSubCategory(editingProduct.subCategory);
+          }
+          if (editingProduct.category) {
+            setSelectedCategory(editingProduct.category);
+          }
+          
+          // Load existing images
+          if (editingProduct.images && editingProduct.images.length > 0) {
+            const existingImages = editingProduct.images.map(img => ({
+              preview: img,
+              base64: img,
+              file: null
+            }));
+            setProductImages(existingImages);
+          }
+          
+          // Reset flag after a brief delay to allow state updates
+          setTimeout(() => {
+            isLoadingEditData.current = false;
+          }, 100);
+        } catch (err) {
+          console.error('Error parsing editing product:', err);
+          isLoadingEditData.current = false;
+        }
+      } else {
+        // Reset form for new product
+        setEditingProductId(null);
+        setProductName("");
+        setSelectedCategory("");
+        setSelectedSubCategory("");
+        setOriginalPrice("");
+        setSalePrice("");
+        setDescription("");
+        setProductImages([]);
+        setProductFeatures({
+          sterlingSilver: false,
+          freeShipping: false,
+          hypoallergenic: false,
+          antiTarnish: false,
+        });
+        setRingSizes([]);
+        setIncludeInGift(false);
+      }
     } else {
       document.body.style.overflow = "";
+      // Clear editing product when panel closes
+      localStorage.removeItem('editingProduct');
+      setEditingProductId(null);
     }
     return () => {
       document.body.style.overflow = "";
     };
   }, [openAddProduct]);
 
-  // Reset sub-category when category changes
+  // Reset sub-category when category changes (only for new products, not when editing)
   React.useEffect(() => {
-    setSelectedSubCategory("");
-  }, [selectedCategory]);
+    if (!editingProductId && !isLoadingEditData.current) {
+      setSelectedSubCategory("");
+    }
+  }, [selectedCategory, editingProductId]);
 
-  // Reset images when sub-category changes
+  // Reset images when sub-category changes (only for new products, not when editing)
   React.useEffect(() => {
-    setProductImages([]);
-    setProductFeatures({
-      sterlingSilver: false,
-      freeShipping: false,
-      hypoallergenic: false,
-      antiTarnish: false,
+    if (!editingProductId) {
+      setProductImages([]);
+      setProductFeatures({
+        sterlingSilver: false,
+        freeShipping: false,
+        hypoallergenic: false,
+        antiTarnish: false,
+      });
+      setDescription("");
+      setOriginalPrice("");
+      setSalePrice("");
+      setRingSizes([]);
+      setIncludeInGift(false);
+      setError("");
+      setSuccess("");
+    }
+  }, [selectedSubCategory, editingProductId]);
+
+  // Convert image file to base64
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
     });
-    setDescription("");
-    setOriginalPrice("");
-    setSalePrice("");
-    setRingSizes([]);
-    setIncludeInGift(false);
-  }, [selectedSubCategory]);
+  };
 
   // Handle image upload
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
-    const imageFiles = files.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
+    const imageFiles = await Promise.all(
+      files.map(async (file) => {
+        const base64 = await convertToBase64(file);
+        return {
+          file,
+          preview: URL.createObjectURL(file),
+          base64: base64, // Store base64 for API
+        };
+      })
+    );
     setProductImages((prev) => [...prev, ...imageFiles]);
   };
 
@@ -145,6 +248,121 @@ export function AddProductPanel() {
     "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12"
   ];
 
+  // Handle form submission
+  const handleSubmit = async () => {
+    // Validation
+    if (!productName.trim()) {
+      setError("Product name is required");
+      return;
+    }
+    if (!selectedCategory) {
+      setError("Category is required");
+      return;
+    }
+    if (!selectedSubCategory) {
+      setError("Sub category is required");
+      return;
+    }
+    if (!originalPrice || parseFloat(originalPrice) <= 0) {
+      setError("Valid original price is required");
+      return;
+    }
+    if (salePrice && parseFloat(salePrice) >= parseFloat(originalPrice)) {
+      setError("Sale price must be less than original price");
+      return;
+    }
+    // Only require images for new products, not when editing
+    if (!editingProductId && productImages.length === 0) {
+      setError("At least one product image is required");
+      return;
+    }
+    
+    const isRing = selectedSubCategory === 'womens-rings' || selectedSubCategory === 'mens-rings';
+    if (isRing && ringSizes.length === 0) {
+      setError("At least one ring size is required for ring products");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      // Convert images to base64 URLs (for now - in production, upload to cloud storage)
+      const imageUrls = productImages.map(img => img.base64 || img.preview);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError("Please login to add products");
+        setLoading(false);
+        return;
+      }
+
+      const isEditMode = !!editingProductId;
+      const url = isEditMode 
+        ? API_ENDPOINTS.PRODUCTS.UPDATE(editingProductId)
+        : API_ENDPOINTS.PRODUCTS.CREATE;
+      
+      const response = await fetch(url, {
+        method: isEditMode ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productName: productName.trim(),
+          category: selectedCategory,
+          subCategory: selectedSubCategory,
+          originalPrice: parseFloat(originalPrice),
+          salePrice: salePrice ? parseFloat(salePrice) : null,
+          description: description.trim(),
+          images: imageUrls,
+          features: productFeatures,
+          ringSizes: isRing ? ringSizes : [],
+          includeInGift: includeInGift
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess(isEditMode ? "Product updated successfully!" : "Product added successfully!");
+        
+        // Reset form
+        setProductName("");
+        setSelectedCategory("");
+        setSelectedSubCategory("");
+        setProductImages([]);
+        setProductFeatures({
+          sterlingSilver: false,
+          freeShipping: false,
+          hypoallergenic: false,
+          antiTarnish: false,
+        });
+        setDescription("");
+        setOriginalPrice("");
+        setSalePrice("");
+        setRingSizes([]);
+        setIncludeInGift(false);
+        setEditingProductId(null);
+        localStorage.removeItem('editingProduct');
+        
+        // Close panel after 2 seconds
+        setTimeout(() => {
+          setOpenAddProduct(dispatch, false);
+          setSuccess("");
+        }, 2000);
+      } else {
+        setError(data.message || (isEditMode ? "Failed to update product. Please try again." : "Failed to add product. Please try again."));
+      }
+    } catch (err) {
+      console.error('Add product error:', err);
+      setError("Network error. Please check if backend server is running.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <aside
       className={`fixed top-0 right-0 z-50 h-screen w-[500px] bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
@@ -154,10 +372,10 @@ export function AddProductPanel() {
       <div className="flex items-start justify-between px-6 pt-8 pb-6">
         <div>
           <Typography variant="h5" color="blue-gray">
-            Add Product
+            {editingProductId ? "Edit Product" : "Add Product"}
           </Typography>
           <Typography className="font-normal text-blue-gray-600">
-            Add new product to your store.
+            {editingProductId ? "Update product information." : "Add new product to your store."}
           </Typography>
         </div>
         <IconButton
@@ -266,17 +484,22 @@ export function AddProductPanel() {
           <Typography variant="h6" color="blue-gray" className="mb-3">
             Product Name
           </Typography>
-          <Input label="Product Name" />
+          <Input 
+            label="Product Name" 
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+          />
         </div>
         <div className="mb-6">
           <Typography variant="h6" color="blue-gray" className="mb-3">
-            Original Price
+            Original Price <span className="text-xs text-red-500 font-normal"></span>
           </Typography>
           <Input 
             label="Original Price" 
             type="number" 
             value={originalPrice}
             onChange={(e) => setOriginalPrice(e.target.value)}
+            required
           />
         </div>
         {shouldShowAdditionalFields() && (
@@ -421,15 +644,52 @@ export function AddProductPanel() {
             </label>
           </div>
         )}
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <Typography variant="small" color="red">
+              {error}
+            </Typography>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {success && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <Typography variant="small" color="green">
+              {success}
+            </Typography>
+          </div>
+        )}
+
         <div className="mt-8 flex flex-col gap-4">
-          <Button variant="gradient" fullWidth>
-            Add Product
+          <Button 
+            variant="gradient" 
+            fullWidth
+            onClick={handleSubmit}
+            disabled={loading}
+            className="flex items-center justify-center gap-2"
+          >
+            {loading && (
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            )}
+            {loading 
+              ? (editingProductId ? 'Updating Product...' : 'Adding Product...') 
+              : (editingProductId ? 'Update Product' : 'Add Product')}
           </Button>
           <Button
             variant="outlined"
             color="blue-gray"
             fullWidth
-            onClick={() => setOpenAddProduct(dispatch, false)}
+            onClick={() => {
+              setOpenAddProduct(dispatch, false);
+              setError("");
+              setSuccess("");
+            }}
+            disabled={loading}
           >
             Cancel
           </Button>

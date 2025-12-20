@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import heroVideo from '../image/WhatsApp Video 2025-12-07 at 18.54.28_4625a532.mp4';
 
 const Hero = () => {
+  const navigate = useNavigate();
   const scrollContainerRef = useRef(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -53,19 +55,23 @@ const Hero = () => {
   const categories = [
     {
       name: 'Rings',
-      icon: <img src="https://www.silverlab.in/cdn/shop/files/diamond-ring.png?v=1749487024&width=150" alt="Ring" className='w-20 h-20 color-white' />
+      icon: <img src="https://www.silverlab.in/cdn/shop/files/diamond-ring.png?v=1749487024&width=150" alt="Ring" className='w-20 h-20 color-white' />,
+      route: '/products/rings'
     },
     {
       name: 'pendant chain',
-      icon: <img src="https://www.silverlab.in/cdn/shop/files/jewelry.png?v=1749487024&width=150" alt="Pendant Chain" className='w-20 h-20 color-white' />
+      icon: <img src="https://www.silverlab.in/cdn/shop/files/jewelry.png?v=1749487024&width=150" alt="Pendant Chain" className='w-20 h-20 color-white' />,
+      route: '/products/chain'
     },
     {
       name: 'Studs',
-      icon: <img src="https://www.silverlab.in/cdn/shop/files/earring.png?v=1749487025&width=150" alt="Studs" className='w-20 h-20 color-white' />
+      icon: <img src="https://www.silverlab.in/cdn/shop/files/earring.png?v=1749487025&width=150" alt="Studs" className='w-20 h-20 color-white' />,
+      route: '/products/earrings'
     },
     {
       name: 'Bracelets',
-      icon: <img src="https://www.silverlab.in/cdn/shop/files/bracelet.png?v=1749488485&width=150" alt="Bracelets" className='w-20 h-20 color-white' />
+      icon: <img src="https://www.silverlab.in/cdn/shop/files/bracelet.png?v=1749488485&width=150" alt="Bracelets" className='w-20 h-20 color-white' />,
+      route: '/products/bracelets'
     }
   ];
 
@@ -103,6 +109,12 @@ const Hero = () => {
       {categories.map((category, index) => (
         <div
           key={index}
+          onClick={() => {
+            if (category.route) {
+              navigate(category.route);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
           className="
             bg-[#1B1B1B]
             transition-all

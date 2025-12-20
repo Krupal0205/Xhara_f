@@ -11,6 +11,8 @@ import {
   WhySilverlab,
   LuxuryPackaging,
   Gifting,
+  Products,
+  ProductDetail,
   ReviewsSection,
   BlogSection,
   Contact
@@ -44,6 +46,13 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/contact" element={<Contact onBack={() => navigate('/')} />} />
           <Route path="/gifting" element={<Gifting />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/products/rings" element={<Products />} />
+          <Route path="/products/chain" element={<Products />} />
+          <Route path="/products/earrings" element={<Products />} />
+          <Route path="/products/bracelets" element={<Products />} />
+          <Route path="/products/:category/:subcategory" element={<Products />} />
+          <Route path="/products/:category" element={<Products />} />
           <Route path="/dashboard/*" element={<Dashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

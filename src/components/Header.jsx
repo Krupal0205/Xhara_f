@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiShoppingCart, FiUser, FiMenu, FiX, FiChevronDown } from 'react-icons/fi';
 import { FaFacebook, FaPinterest, FaInstagram, FaYoutube } from 'react-icons/fa';
 import logo from '../image/logo.png';
+import { API_ENDPOINTS } from '../config/api.js';
 
 const Header = ({ onContactClick }) => {
   const navigate = useNavigate();
@@ -21,6 +22,10 @@ const Header = ({ onContactClick }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const womenDropdownRef = useRef(null);
   const menDropdownRef = useRef(null);
   const loginModalRef = useRef(null);
@@ -64,7 +69,6 @@ const Header = ({ onContactClick }) => {
       name: 'Women',
       submenu: [
         "Women's Explore all",
-        "Exclusive Designs",
         "Women's Bracelets",
         "Women's Chain",
         "Women's Rings",
@@ -160,13 +164,39 @@ const Header = ({ onContactClick }) => {
                   {item.submenu && item.name !== 'Women' && item.name !== 'Men' && (
                     <div className="absolute top-full left-0 mt-0 bg-black border-t border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48">
                       <ul className="py-2">
-                        {item.submenu.map((subItem, subIndex) => (
-                          <li key={subIndex}>
-                            <a href="#" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-900 hover:text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                              {subItem}
-                            </a>
-                          </li>
-                        ))}
+                        {item.submenu.map((subItem, subIndex) => {
+                          const getRoute = (item) => {
+                            if (item === "Women's Explore all") return '/products/women';
+                            if (item === "Women's Bracelets") return '/products/women/womens-bracelets';
+                            if (item === "Women's Chain") return '/products/women/womens-chain';
+                            if (item === "Women's Rings") return '/products/women/womens-rings';
+                            if (item === "Women's Earrings") return '/products/women/womens-earrings';
+                            if (item === "Men's Explore all") return '/products/men';
+                            if (item === "Men's Chain") return '/products/men/mens-chain';
+                            if (item === "Men's Rings") return '/products/men/mens-rings';
+                            if (item === "Men's Bracelets") return '/products/men/mens-bracelets';
+                            return '#';
+                          };
+                          return (
+                            <li key={subIndex}>
+                              <a 
+                                href="#" 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const route = getRoute(subItem);
+                                  if (route !== '#') {
+                                    navigate(route);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }
+                                }}
+                                className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-900 hover:text-white cursor-pointer" 
+                                style={{ fontFamily: "'Poppins', sans-serif" }}
+                              >
+                                {subItem}
+                              </a>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}
@@ -212,13 +242,37 @@ const Header = ({ onContactClick }) => {
               {/* Left Side - Menu Items */}
               <div className="w-1/2 py-6 px-6 mt-[50px] ml-[100px]">
                 <ul className="space-y-3">
-                  {menuItems.find(item => item.name === 'Women')?.submenu.map((subItem, subIndex) => (
-                    <li key={subIndex}>
-                      <a href="#" className="block text-sm text-gray-200 hover:text-white transition-colors" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                        {subItem}
-                      </a>
-                    </li>
-                  ))}
+                  {menuItems.find(item => item.name === 'Women')?.submenu.map((subItem, subIndex) => {
+                    const getRoute = (item) => {
+                      if (item === "Women's Explore all") return '/products/women';
+                      if (item === "Women's Bracelets") return '/products/women/womens-bracelets';
+                      if (item === "Women's Chain") return '/products/women/womens-chain';
+                      if (item === "Women's Rings") return '/products/women/womens-rings';
+                      if (item === "Women's Earrings") return '/products/women/womens-earrings';
+                      return '#';
+                    };
+                    return (
+                      <li key={subIndex}>
+                        <a 
+                          href="#" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const route = getRoute(subItem);
+                            if (route !== '#') {
+                              navigate(route);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              setIsWomenHovered(false);
+                              setIsWomenClicked(false);
+                            }
+                          }}
+                          className="block text-sm text-gray-200 hover:text-white transition-colors cursor-pointer" 
+                          style={{ fontFamily: "'Poppins', sans-serif" }}
+                        >
+                          {subItem}
+                        </a>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
               {/* Right Side - Product Image */}
@@ -249,13 +303,36 @@ const Header = ({ onContactClick }) => {
               {/* Left Side - Menu Items */}
               <div className="w-1/2 py-6 px-6 mt-[50px] ml-[100px]">
                 <ul className="space-y-3">
-                  {menuItems.find(item => item.name === 'Men')?.submenu.map((subItem, subIndex) => (
-                    <li key={subIndex}>
-                      <a href="#" className="block text-sm text-gray-200 hover:text-white transition-colors" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                        {subItem}
-                      </a>
-                    </li>
-                  ))}
+                  {menuItems.find(item => item.name === 'Men')?.submenu.map((subItem, subIndex) => {
+                    const getRoute = (item) => {
+                      if (item === "Men's Explore all") return '/products/men';
+                      if (item === "Men's Chain") return '/products/men/mens-chain';
+                      if (item === "Men's Rings") return '/products/men/mens-rings';
+                      if (item === "Men's Bracelets") return '/products/men/mens-bracelets';
+                      return '#';
+                    };
+                    return (
+                      <li key={subIndex}>
+                        <a 
+                          href="#" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const route = getRoute(subItem);
+                            if (route !== '#') {
+                              navigate(route);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              setIsMenHovered(false);
+                              setIsMenClicked(false);
+                            }
+                          }}
+                          className="block text-sm text-gray-200 hover:text-white transition-colors cursor-pointer" 
+                          style={{ fontFamily: "'Poppins', sans-serif" }}
+                        >
+                          {subItem}
+                        </a>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
               {/* Right Side - Product Image */}
@@ -356,6 +433,7 @@ const Header = ({ onContactClick }) => {
                 setPhoneNumber('');
                 setPassword('');
                 setConfirmPassword('');
+                setError('');
               }}
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
             >
@@ -434,30 +512,89 @@ const Header = ({ onContactClick }) => {
                     </button>
                   </div>
 
+                  {/* Error Message */}
+                  {error && (
+                    <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded text-sm">
+                      {error}
+                    </div>
+                  )}
+
                   {/* Sign In Button */}
                   <button 
-                    onClick={() => {
-                      if (email.trim() && password.trim()) {
-                        // Check for admin credentials
-                        if (email.toLowerCase() === 'admin@gmail.com' && password === '123456') {
-                          localStorage.setItem('adminLoggedIn', 'true');
+                    onClick={async () => {
+                      if (!email.trim() || !password.trim()) {
+                        setError('Please fill in all fields');
+                        return;
+                      }
+
+                      // Login via API
+                      setLoading(true);
+                      setError('');
+                      
+                      try {
+                        console.log('🔐 Attempting login with:', { email: email.trim() });
+                        
+                        const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            email: email.trim(),
+                            password: password.trim(),
+                          }),
+                        });
+
+                        const data = await response.json();
+                        console.log('📥 Login response:', data);
+
+                        if (data.success) {
+                          // Store token and user data
+                          localStorage.setItem('token', data.data.token);
+                          localStorage.setItem('user', JSON.stringify(data.data.user));
+                          localStorage.setItem('userLoggedIn', 'true');
+                          
+                          console.log('✅ Login successful!');
+                          console.log('👤 User data:', data.data.user);
+                          console.log('🔑 User role:', data.data.user.role);
+                          
                           setIsLoginOpen(false);
                           setEmail('');
                           setPassword('');
-                          navigate('/dashboard/admin/home');
+                          setError('');
+                          
+                          // Navigate based on user role from database
+                          if (data.data.user.role === 'admin') {
+                            console.log('🚀 Admin detected! Redirecting to admin panel...');
+                            localStorage.setItem('adminLoggedIn', 'true');
+                            navigate('/dashboard/admin/home');
+                          } else {
+                            console.log('👤 Regular user. Redirecting to home...');
+                            navigate('/');
+                            window.location.reload();
+                          }
                         } else {
-                          // Regular user login
-                          console.log('Logging in:', email);
-                          setIsLoginOpen(false);
-                          setEmail('');
-                          setPassword('');
+                          console.error('❌ Login failed:', data.message);
+                          setError(data.message || 'Login failed. Please try again.');
                         }
+                      } catch (err) {
+                        console.error('❌ Login error:', err);
+                        setError('Network error. Please check if backend server is running.');
+                      } finally {
+                        setLoading(false);
                       }
                     }}
-                    className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded transition-colors" 
+                    disabled={loading}
+                    className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
                     style={{ fontFamily: "'Poppins', sans-serif" }}
                   >
-                    Sign in
+                    {loading && (
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    )}
+                    {loading ? 'Signing in...' : 'Sign in'}
                   </button>
 
                   {/* Sign Up Link */}
@@ -559,28 +696,96 @@ const Header = ({ onContactClick }) => {
                     )}
                   </div>
 
+                  {/* Error Message */}
+                  {error && (
+                    <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded text-sm">
+                      {error}
+                    </div>
+                  )}
+
                   {/* Sign Up Button */}
                   <button 
-                    onClick={() => {
-                      if (fullName.trim() && phoneNumber.trim() && email.trim() && password.trim() && confirmPassword.trim()) {
-                        if (password !== confirmPassword) {
-                          alert('Passwords do not match');
-                          return;
+                    onClick={async () => {
+                      if (!fullName.trim() || !phoneNumber.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
+                        setError('Please fill in all fields');
+                        return;
+                      }
+
+                      if (password !== confirmPassword) {
+                        setError('Passwords do not match');
+                        return;
+                      }
+
+                      if (phoneNumber.length !== 10) {
+                        setError('Phone number must be 10 digits');
+                        return;
+                      }
+
+                      if (password.length < 6) {
+                        setError('Password must be at least 6 characters');
+                        return;
+                      }
+
+                      setLoading(true);
+                      setError('');
+
+                      try {
+                        const response = await fetch(API_ENDPOINTS.AUTH.SIGNUP, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            fullName: fullName.trim(),
+                            email: email.trim(),
+                            phoneNumber: phoneNumber.trim(),
+                            password: password.trim(),
+                            confirmPassword: confirmPassword.trim(),
+                          }),
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                          // Store token and user data
+                          localStorage.setItem('token', data.data.token);
+                          localStorage.setItem('user', JSON.stringify(data.data.user));
+                          localStorage.setItem('userLoggedIn', 'true');
+                          
+                          // Show success popup
+                          setSuccessMessage('Account created successfully! Welcome to XHARA Silver.');
+                          setShowSuccessPopup(true);
+                          
+                          // Close login modal and reset form
+                          setIsLoginOpen(false);
+                          setAuthView('login');
+                          setFullName('');
+                          setPhoneNumber('');
+                          setEmail('');
+                          setPassword('');
+                          setConfirmPassword('');
+                          setError('');
+                        } else {
+                          setError(data.message || (data.errors && data.errors[0]?.msg) || 'Signup failed. Please try again.');
                         }
-                        console.log('Signing up:', { fullName, phoneNumber, email });
-                        setIsLoginOpen(false);
-                        setAuthView('login');
-                        setFullName('');
-                        setPhoneNumber('');
-                        setEmail('');
-                        setPassword('');
-                        setConfirmPassword('');
+                      } catch (err) {
+                        console.error('Signup error:', err);
+                        setError('Network error. Please check if backend server is running.');
+                      } finally {
+                        setLoading(false);
                       }
                     }}
-                    className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded transition-colors" 
+                    disabled={loading}
+                    className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
                     style={{ fontFamily: "'Poppins', sans-serif" }}
                   >
-                    Sign up
+                    {loading && (
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    )}
+                    {loading ? 'Creating account...' : 'Sign up'}
                   </button>
 
                   {/* Sign In Link */}
@@ -618,19 +823,41 @@ const Header = ({ onContactClick }) => {
 
                   {/* Reset Password Button */}
                   <button 
-                    onClick={() => {
-                      if (email.trim()) {
-                        console.log('Sending password reset to:', email);
-                        alert('Password reset link has been sent to your email');
+                    onClick={async () => {
+                      if (!email.trim()) {
+                        setError('Please enter your email');
+                        return;
+                      }
+
+                      setLoading(true);
+                      setError('');
+
+                      try {
+                        // Simulate API call (replace with actual API endpoint when available)
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        
+                        setSuccessMessage('Password reset link has been sent to your email');
+                        setShowSuccessPopup(true);
                         setIsLoginOpen(false);
                         setAuthView('login');
                         setEmail('');
+                      } catch (err) {
+                        setError('Failed to send reset link. Please try again.');
+                      } finally {
+                        setLoading(false);
                       }
                     }}
-                    className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded transition-colors" 
+                    disabled={loading}
+                    className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
                     style={{ fontFamily: "'Poppins', sans-serif" }}
                   >
-                    Send reset link
+                    {loading && (
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    )}
+                    {loading ? 'Sending...' : 'Send reset link'}
                   </button>
 
                   {/* Back to Sign In Link */}
@@ -648,6 +875,53 @@ const Header = ({ onContactClick }) => {
             </div>
 
             
+          </div>
+        </div>
+      )}
+
+      {/* Success Popup Modal */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-[101] flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-lg w-full max-w-md p-8 relative">
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setShowSuccessPopup(false);
+                setSuccessMessage('');
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <FiX className="w-5 h-5" />
+            </button>
+
+            {/* Success Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+
+            {/* Success Message */}
+            <h3 className="text-2xl font-bold text-white text-center mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              Success!
+            </h3>
+            <p className="text-gray-300 text-center mb-6" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              {successMessage}
+            </p>
+
+            {/* OK Button */}
+            <button
+              onClick={() => {
+                setShowSuccessPopup(false);
+                setSuccessMessage('');
+              }}
+              className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded transition-colors"
+              style={{ fontFamily: "'Poppins', sans-serif" }}
+            >
+              OK
+            </button>
           </div>
         </div>
       )}
