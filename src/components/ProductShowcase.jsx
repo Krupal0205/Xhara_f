@@ -1,102 +1,134 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiArrowRight } from 'react-icons/fi';
 import productImage2 from '../image/WhatsApp Image 2025-12-07 at 19.05.14_f1ace842.jpg';
 import productImage5 from '../image/image.png';
 import diamondVideo from '../image/vecteezy_diamond-with-glass-box-on-black-background-3d-render-animation_9265752.mp4';
-
+import { API_ENDPOINTS } from '@/config/api';
 
 const ProductShowcase = () => {
+  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('rings');
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "Azure Bloom Butterfly Pendant",
-      originalPrice: 5499,
-      salePrice: 4299,
-      onSale: true,
-      image: productImage5
-    },
-    {
-      id: 2,
-      name: "Midnight Bloom Pendant Necklace",
-      originalPrice: 5500,
-      salePrice: 4500,
-      onSale: true,
-      image: "https://www.silverlab.in/cdn/shop/files/ART03474_copy_result.jpg?v=1760092449&width=1100"
-    },
-    {
-      id: 3,
-      name: "Golden Ginkgo Pearl Pendant",
-      originalPrice: 5500,
-      salePrice: 4500,
-      onSale: true,
-      image: productImage5
-    },
-    {
-      id: 4,
-      name: "Fox Charm with Aqua Gemstone",
-      originalPrice: 5500,
-      salePrice: 4500,
-      onSale: true,
-      image: "https://www.silverlab.in/cdn/shop/files/ART03474_copy_result.jpg?v=1760092449&width=1100"
-    },
-    {
-      id: 5,
-      name: "Blush Bloom Pendant Necklace",
-      originalPrice: 7500,
-      salePrice: 6500,
-      onSale: true,
-      image: productImage5
-    },
-    {
-      id: 6,
-      name: "Mint Petal Drop Pendant",
-      originalPrice: 5200,
-      salePrice: 4200,
-      onSale: true,
-      image: "https://www.silverlab.in/cdn/shop/files/ART03474_copy_result.jpg?v=1760092449&width=1100"
-    }
-  ];
-
-  const categoryProducts = {
-    rings: [
-      { name: "Aryelle", price: 1199, image: "https://www.silverlab.in/cdn/shop/files/ART01673_result.jpg?v=1745573250&width=600" },
-      { name: "Panther Luxe", price: 2500, image: "https://www.silverlab.in/cdn/shop/files/ART01669_result_2065d84c-64e9-461d-b735-4cf60a0da630.jpg?v=1755623416&width=823" },
-      { name: "Aurora Band", price: 1999, image: "https://www.silverlab.in/cdn/shop/files/ART04016_copy_result.jpg?v=1755623366&width=600" },
-      { name: "Glimmerheart Solitaire Ring", price: 1399, image: "https://www.silverlab.in/cdn/shop/files/ART01671_result.jpg?v=1745573765&width=600" }
-    ],
-    earrings: [
-      { name: "Regalia CZ Stud", price: 999, image: "https://www.silverlab.in/cdn/shop/files/ART01706_result.jpg?v=1745571523&width=823" },
-      { name: "Frostlight Solitaire Stud", price: 999, image: "https://www.silverlab.in/cdn/shop/files/ART01702_result.jpg?v=1745571520&width=600" },
-      { name: "FrostFlare Snowflake Stud", price: 999, image: "https://www.silverlab.in/cdn/shop/files/ART01704_result_600x600.jpg?v=1749486262" },
-      { name: "Starlace Halo Stud", price: 999, image: "https://www.silverlab.in/cdn/shop/files/ART01704_result_600x600.jpg?v=1749486262" }
-    ],
-    chains: [
-      { name: "Azure Bloom Butterfly Pendant", price: 4299, image: "https://www.silverlab.in/cdn/shop/files/ART03474_copy_result.jpg?v=1760092449&width=1100" },
-      { name: "Silver Whisper Leaf Pendant", price: 1199, image: "https://www.silverlab.in/cdn/shop/files/ART03647_copy_result.jpg?v=1760092449&width=1100" },
-      { name: "Ocean Breeze Floral Pendant", price: 1999, image: "https://www.silverlab.in/cdn/shop/files/ART03662_copy_result.jpg?v=1760095032&width=1100" },
-      { name: "Blush Bloom Pendant Necklace", price: 6500, image: "https://www.silverlab.in/cdn/shop/files/11F0CF42-BFDF-46FE-BD2F-CC3A76FCE263.jpg?v=1747721531&width=600" }
-    ],
-    bracelets: [
-      { name: "Silver Clover Harmony Charm Bracelet", price: 999, image: "https://www.silverlab.in/cdn/shop/files/ART04027_copy_result_600x600.jpg?v=1747727338" },
-      { name: "Tennis Bracelet", price: 5999, image: "https://www.silverlab.in/cdn/shop/files/ART04023copy_result_600x600.jpg?v=1747727007" },
-      { name: "Elegant Blossom Silver Bracelet", price: 1499, image: "https://www.silverlab.in/cdn/shop/files/ART04029copy_result_600x600.jpg?v=1747726714" },
-      { name: "Silver Sparkle Trio CZ Bracelet", price: 1499, image: "https://www.silverlab.in/cdn/shop/files/ART04030_copy_result_600x600.jpg?v=1747726410" }
-    ],
-    mensChains: [
-      { name: "Classic - Men's Chain", price: 5999, image: "https://www.silverlab.in/cdn/shop/files/ART03766_copy_result_600x600.jpg?v=1747725498" },
-      { name: "Trail Links - Men's Chain", price: 4999, image: "https://www.silverlab.in/cdn/shop/files/ART03769_copy_result_600x600.jpg?v=1747725716" },
-      { name: "EdgeCraft - Men's Chain", price: 5999, image: "https://www.silverlab.in/cdn/shop/files/IMG-5039_600x600.png?v=1747229407" },
-      { name: "Core Link", price: 5999, image: "https://www.silverlab.in/cdn/shop/files/97CE20E8-2755-4519-80BF-4A903F7CBFC3_600x600.png?v=1747246670" }
-    ]
+  const [completeSets, setCompleteSets] = useState([]);
+  const [loadingSets, setLoadingSets] = useState(true);
+  const [categoryProducts, setCategoryProducts] = useState([]);
+  const [loadingCategory, setLoadingCategory] = useState(true);
+  
+  // Map category IDs to API subcategories
+  const categoryToSubCategory = {
+    'rings': 'womens-rings',
+    'earrings': 'womens-earrings',
+    'chains': 'womens-chain',
+    'bracelets': 'womens-bracelets',
+    'mensChains': 'mens-chain'
   };
 
+  // Map category IDs to navigation paths
+  const categoryToPath = {
+    'rings': '/products/rings',
+    'earrings': '/products/earrings',
+    'chains': '/products/chain',
+    'bracelets': '/products/bracelets',
+    'mensChains': '/products/men/chain'
+  };
+  
+  // Fetch complete sets from API
+  useEffect(() => {
+    const fetchCompleteSets = async () => {
+      try {
+        setLoadingSets(true);
+        const response = await fetch(`${API_ENDPOINTS.COMPLETE_SETS.GET_ALL}?isActive=true`);
+        const data = await response.json();
+
+        if (data.success) {
+          // Map API complete sets to component format
+          const mappedSets = (data.data.sets || []).map((set) => ({
+            id: set._id,
+            _id: set._id,
+            name: set.setName,
+            price: set.salePrice || set.originalPrice,
+            originalPrice: set.originalPrice,
+            salePrice: set.salePrice,
+            onSale: !!set.salePrice,
+            image: set.images && set.images.length > 0 ? set.images[0] : '',
+            tagline: null,
+          }));
+          setCompleteSets(mappedSets);
+        }
+      } catch (err) {
+        console.error('Fetch complete sets error:', err);
+      } finally {
+        setLoadingSets(false);
+      }
+    };
+
+    fetchCompleteSets();
+  }, []);
+
+  // Fetch products for active category
+  useEffect(() => {
+    const fetchCategoryProducts = async () => {
+      try {
+        setLoadingCategory(true);
+        const subCategory = categoryToSubCategory[activeCategory];
+        
+        if (!subCategory) {
+          setCategoryProducts([]);
+          setLoadingCategory(false);
+          return;
+        }
+
+        const response = await fetch(`${API_ENDPOINTS.PRODUCTS.GET_ALL}?subCategory=${subCategory}&isActive=true`);
+        const data = await response.json();
+
+        if (data.success) {
+          // Map API products to component format
+          const mappedProducts = (data.data.products || []).map((product) => ({
+            id: product._id,
+            _id: product._id,
+            name: product.productName,
+            price: product.salePrice || product.originalPrice,
+            originalPrice: product.originalPrice,
+            salePrice: product.salePrice,
+            onSale: !!product.salePrice,
+            image: product.images && product.images.length > 0 ? product.images[0] : '',
+            tagline: product.tagline || null,
+          }));
+          setCategoryProducts(mappedProducts);
+        } else {
+          setCategoryProducts([]);
+        }
+      } catch (err) {
+        console.error('Fetch category products error:', err);
+        setCategoryProducts([]);
+      } finally {
+        setLoadingCategory(false);
+      }
+    };
+
+    fetchCategoryProducts();
+  }, [activeCategory]);
+
+  // Get first 6 sets for display
+  const displayedSets = completeSets.slice(0, 6);
+  const hasMoreSets = completeSets.length > 6;
+
+  // Get first 6 products for display
+  const displayedCategoryProducts = categoryProducts.slice(0, 6);
+  const hasMoreProducts = categoryProducts.length > 6;
+
   const CategoryCard = ({ product }) => (
-    <div className="bg-black rounded-lg overflow-hidden group cursor-pointer relative flex-shrink-0 min-w-[200px] sm:min-w-[240px] md:min-w-[280px] lg:min-w-[320px] hover:scale-105 transition-transform duration-300">
+    <div 
+      onClick={() => {
+        navigate(`/product/${product._id || product.id}`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }}
+      className="bg-black rounded-lg overflow-hidden group cursor-pointer relative flex-shrink-0 min-w-[200px] sm:min-w-[240px] md:min-w-[280px] lg:min-w-[320px] hover:scale-105 transition-transform duration-300"
+    >
       {/* Product Image Area */}
       <div className="relative h-[250px] sm:h-[280px] md:h-[300px] lg:h-[350px] flex items-center justify-center overflow-hidden">
         {/* Product Image */}
-        {product.image && product.image.startsWith('http') ? (
+        {product.image ? (
           <div 
             className="w-full h-full bg-cover bg-center bg-no-repeat relative group-hover:scale-110 transition-transform duration-500"
             style={{
@@ -107,21 +139,40 @@ const ProductShowcase = () => {
           </div>
         ) : (
           <div className="w-full h-full bg-gray-900 flex items-center justify-center relative">
-            <span className="text-gray-500 text-2xl sm:text-3xl md:text-4xl">{product.image}</span>
+            <span className="text-gray-500 text-sm">No Image</span>
           </div>
+        )}
+        {/* Sale Badge */}
+        {product.onSale && (
+          <span className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 bg-red-500 text-white text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 rounded z-10">
+            Sale
+          </span>
         )}
       </div>
       
       {/* Product Info */}
       <div className="p-3 sm:p-4 bg-black">
         <h3 className="font-semibold text-white mb-2 text-xs sm:text-sm md:text-base line-clamp-2" style={{ fontFamily: "'Poppins', sans-serif" }}>{product.name}</h3>
-        <p className="text-sm sm:text-base md:text-lg font-bold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>Rs. {product.price.toLocaleString()}</p>
+        {product.onSale ? (
+          <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+            <span className="text-sm sm:text-base md:text-lg font-bold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>Rs. {product.salePrice.toLocaleString()}</span>
+            <span className="text-xs sm:text-sm text-gray-400 line-through" style={{ fontFamily: "'Poppins', sans-serif" }}>Rs. {product.originalPrice.toLocaleString()}</span>
+          </div>
+        ) : (
+          <p className="text-sm sm:text-base md:text-lg font-bold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>Rs. {product.price?.toLocaleString()}</p>
+        )}
       </div>
     </div>
   );
 
   const ProductCard = ({ product, showSale = false }) => (
-    <div className="bg-black rounded-lg overflow-hidden group cursor-pointer relative min-w-[280px] sm:min-w-[320px] md:min-w-[350px] lg:min-w-[400px] flex-shrink-0">
+    <div 
+      onClick={() => {
+        navigate('/complete-sets');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }}
+      className="bg-black rounded-lg overflow-hidden group cursor-pointer relative min-w-[280px] sm:min-w-[320px] md:min-w-[350px] lg:min-w-[400px] flex-shrink-0"
+    >
       {/* Product Image Area */}
       <div className="relative h-[350px] sm:h-[400px] md:h-[450px] lg:h-[500px] flex items-center justify-center">
         {/* Main Product Image */}
@@ -201,15 +252,33 @@ const ProductShowcase = () => {
         
         {/* Scrollable Product Cards */}
         <div className="w-full overflow-x-auto overflow-y-hidden scrollbar-hide" style={{ scrollBehavior: 'smooth' }}>
-          <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max pb-4 pl-3 sm:pl-4 md:pl-6 pr-3 sm:pr-4 md:pr-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} showSale={true} />
-            ))}
-            {/* View All Card */}
-            <div className="bg-[#1a1a1a] rounded-lg min-w-[280px] sm:min-w-[320px] md:min-w-[350px] lg:min-w-[400px] flex-shrink-0 h-[400px] sm:h-[450px] md:h-[500px] flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors">
-              <p className="text-white text-lg sm:text-xl font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>View all</p>
+          {loadingSets ? (
+            <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max pb-4 pl-3 sm:pl-4 md:pl-6 pr-3 sm:pr-4 md:pr-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-[#1a1a1a] rounded-lg min-w-[280px] sm:min-w-[320px] md:min-w-[350px] lg:min-w-[400px] flex-shrink-0 h-[400px] sm:h-[450px] md:h-[500px] flex items-center justify-center">
+                  <p className="text-gray-500 text-sm">Loading...</p>
+                </div>
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max pb-4 pl-3 sm:pl-4 md:pl-6 pr-3 sm:pr-4 md:pr-6">
+              {displayedSets.map((set) => (
+                <ProductCard key={set.id} product={set} showSale={true} />
+              ))}
+              {/* View All Card - Only show if there are more than 6 sets */}
+              {hasMoreSets && (
+                <div 
+                  onClick={() => {
+                    navigate('/complete-sets');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="bg-[#1a1a1a] rounded-lg min-w-[280px] sm:min-w-[320px] md:min-w-[350px] lg:min-w-[400px] flex-shrink-0 h-[400px] sm:h-[450px] md:h-[500px] flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors"
+                >
+                  <p className="text-white text-lg sm:text-xl font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>View all</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -251,16 +320,47 @@ const ProductShowcase = () => {
 
           {/* Products Grid */}
           <div className="w-full overflow-x-auto overflow-y-hidden scrollbar-hide" style={{ scrollBehavior: 'smooth' }}>
-            <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max pb-4 pl-3 sm:pl-4 md:pl-6 pr-3 sm:pr-4 md:pr-6">
-              {categoryProducts[activeCategory]?.map((product, index) => (
-                <CategoryCard key={index} product={product} />
-              ))}
-              {/* View All Card */}
-              <div className="bg-[#1B1B1B] rounded-lg min-w-[200px] sm:min-w-[240px] md:min-w-[280px] lg:min-w-[320px] flex-shrink-0 h-[350px] sm:h-[380px] md:h-[420px] lg:h-[350px] flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-all duration-300">
-                <FiArrowRight className="text-white w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 sm:mb-3" />
-                <p className="text-white text-sm sm:text-base md:text-lg font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>View all</p>
+            {loadingCategory ? (
+              <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max pb-4 pl-3 sm:pl-4 md:pl-6 pr-3 sm:pr-4 md:pr-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-[#1B1B1B] rounded-lg min-w-[200px] sm:min-w-[240px] md:min-w-[280px] lg:min-w-[320px] flex-shrink-0 h-[350px] sm:h-[380px] md:h-[420px] lg:h-[350px] flex items-center justify-center">
+                    <p className="text-gray-500 text-sm">Loading...</p>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max pb-4 pl-3 sm:pl-4 md:pl-6 pr-3 sm:pr-4 md:pr-6">
+                {displayedCategoryProducts.length > 0 ? (
+                  <>
+                    {displayedCategoryProducts.map((product) => (
+                      <CategoryCard key={product.id} product={product} />
+                    ))}
+                    {/* View All Card - Only show if there are more than 6 products */}
+                    {hasMoreProducts && (
+                      <div 
+                        onClick={() => {
+                          const path = categoryToPath[activeCategory];
+                          if (path) {
+                            navigate(path);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }
+                        }}
+                        className="bg-[#1B1B1B] rounded-lg min-w-[200px] sm:min-w-[240px] md:min-w-[280px] lg:min-w-[320px] flex-shrink-0 h-[350px] sm:h-[380px] md:h-[420px] lg:h-[350px] flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-all duration-300"
+                      >
+                        <FiArrowRight className="text-white w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 sm:mb-3" />
+                        <p className="text-white text-sm sm:text-base md:text-lg font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>View all</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full py-8 text-center">
+                    <p className="text-gray-400 text-sm sm:text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                      No products available in this category.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>

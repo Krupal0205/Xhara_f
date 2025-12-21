@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiArrowLeft } from 'react-icons/fi';
 import { AlertModal } from '@/widgets/layout';
+import { API_ENDPOINTS } from '@/config/api';
 
 const Contact = ({ onBack }) => {
   const [formData, setFormData] = useState({
@@ -23,12 +24,34 @@ const Contact = ({ onBack }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log('Form submitted:', formData);
-    setAlertModal({ open: true, message: 'Thank you for your message! We will get back to you soon.' });
-    setFormData({ name: '', email: '', phone: '', comment: '' });
+    try {
+      const response = await fetch(API_ENDPOINTS.CONTACTS.CREATE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: formData.comment
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setAlertModal({ open: true, message: data.message || 'Thank you for your message! We will get back to you soon.' });
+        setFormData({ name: '', email: '', phone: '', comment: '' });
+      } else {
+        setAlertModal({ open: true, message: data.message || 'Failed to submit form. Please try again.' });
+      }
+    } catch (error) {
+      console.error('Submit contact form error:', error);
+      setAlertModal({ open: true, message: 'Network error. Please check your connection and try again.' });
+    }
   };
 
   return (

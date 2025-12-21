@@ -160,7 +160,13 @@ const Hero = () => {
         >
           <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max px-3 sm:px-4 md:px-6">
             {/* HER Section */}
-            <div className="relative h-[250px] sm:h-[300px] md:h-[400px] w-[250px] sm:w-[300px] md:w-[400px] flex-shrink-0 overflow-hidden group cursor-pointer transition-all duration-500">
+            <div 
+              onClick={() => {
+                navigate('/products/women');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="relative h-[250px] sm:h-[300px] md:h-[400px] w-[250px] sm:w-[300px] md:w-[400px] flex-shrink-0 overflow-hidden group cursor-pointer transition-all duration-500"
+            >
               <div 
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-110"
                 style={{
@@ -177,7 +183,13 @@ const Hero = () => {
             </div>
 
             {/* HIM Section */}
-            <div className="relative h-[250px] sm:h-[300px] md:h-[400px] w-[250px] sm:w-[300px] md:w-[400px] flex-shrink-0 overflow-hidden group cursor-pointer transition-all duration-500">
+            <div 
+              onClick={() => {
+                navigate('/products/men');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="relative h-[250px] sm:h-[300px] md:h-[400px] w-[250px] sm:w-[300px] md:w-[400px] flex-shrink-0 overflow-hidden group cursor-pointer transition-all duration-500"
+            >
               <div 
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-110"
                 style={{
@@ -194,7 +206,13 @@ const Hero = () => {
             </div>
 
             {/* SPRING SPARKLE Section */}
-            <div className="relative h-[250px] sm:h-[300px] md:h-[400px] w-[250px] sm:w-[300px] md:w-[400px] flex-shrink-0 overflow-hidden group cursor-pointer transition-all duration-500">
+            <div 
+              onClick={() => {
+                navigate('/complete-sets');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="relative h-[250px] sm:h-[300px] md:h-[400px] w-[250px] sm:w-[300px] md:w-[400px] flex-shrink-0 overflow-hidden group cursor-pointer transition-all duration-500"
+            >
               <div 
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-110"
                 style={{
@@ -211,7 +229,13 @@ const Hero = () => {
             </div>
 
             {/* GIFTING Section */}
-            <div className="relative h-[250px] sm:h-[300px] md:h-[400px] w-[250px] sm:w-[300px] md:w-[400px] flex-shrink-0 overflow-hidden group cursor-pointer transition-all duration-500">
+            <div 
+              onClick={() => {
+                navigate('/gifting');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="relative h-[250px] sm:h-[300px] md:h-[400px] w-[250px] sm:w-[300px] md:w-[400px] flex-shrink-0 overflow-hidden group cursor-pointer transition-all duration-500"
+            >
               <div 
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-110"
                 style={{

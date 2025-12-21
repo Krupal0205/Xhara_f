@@ -15,6 +15,27 @@ export const API_ENDPOINTS = {
     UPDATE: (id) => `${API_BASE_URL}/products/${id}`,
     DELETE: (id) => `${API_BASE_URL}/products/${id}`,
   },
+  COMPLETE_SETS: {
+    GET_ALL: `${API_BASE_URL}/complete-sets`,
+    GET_BY_ID: (id) => `${API_BASE_URL}/complete-sets/${id}`,
+    CREATE: `${API_BASE_URL}/complete-sets`,
+    UPDATE: (id) => `${API_BASE_URL}/complete-sets/${id}`,
+    DELETE: (id) => `${API_BASE_URL}/complete-sets/${id}`,
+  },
+  CONTACTS: {
+    GET_ALL: `${API_BASE_URL}/contacts`,
+    GET_BY_ID: (id) => `${API_BASE_URL}/contacts/${id}`,
+    CREATE: `${API_BASE_URL}/contacts`,
+    UPDATE: (id) => `${API_BASE_URL}/contacts/${id}`,
+    DELETE: (id) => `${API_BASE_URL}/contacts/${id}`,
+  },
+  BLOGS: {
+    GET_ALL: `${API_BASE_URL}/blogs`,
+    GET_BY_ID: (id) => `${API_BASE_URL}/blogs/${id}`,
+    CREATE: `${API_BASE_URL}/blogs`,
+    UPDATE: (id) => `${API_BASE_URL}/blogs/${id}`,
+    DELETE: (id) => `${API_BASE_URL}/blogs/${id}`,
+  },
   HEALTH: `${API_BASE_URL}/health`,
 };
 

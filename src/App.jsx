@@ -12,12 +12,15 @@ import {
   WhySilverlab,
   LuxuryPackaging,
   Gifting,
+  CompleteSets,
   Products,
   ProductDetail,
   Cart,
   Checkout,
   ReviewsSection,
   BlogSection,
+  Blogs,
+  BlogDetail,
   Contact
 } from './components';
 
@@ -50,6 +53,9 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/contact" element={<Contact onBack={() => navigate('/')} />} />
             <Route path="/gifting" element={<Gifting />} />
+            <Route path="/complete-sets" element={<CompleteSets />} />
+            <Route path="/blogs" element={<Blogs />} />
+            <Route path="/blog/:id" element={<BlogDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/product/:id" element={<ProductDetail />} />

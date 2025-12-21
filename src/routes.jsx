@@ -7,7 +7,7 @@ import {
   InformationCircleIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/solid";
-import { Home, User, Profile, Tables, Notifications, Blogs } from "@/pages/dashboard";
+import { Home, User, Profile, Tables, Notifications, Blogs, Contacts } from "@/pages/dashboard";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -42,16 +42,22 @@ export const routes = [
         element: <Tables />,
       },
       {
-        icon: <InformationCircleIcon {...icon} />,
-        name: "notifications",
-        path: "/admin/notifications",
-        element: <Notifications />,
+        icon: <DocumentTextIcon {...icon} />,
+        name: "contacts",
+        path: "/admin/contacts",
+        element: <Contacts />,
       },
       {
         icon: <DocumentTextIcon {...icon} />,
         name: "blogs",
         path: "/admin/blogs",
         element: <Blogs />,
+      },
+      {
+        icon: <InformationCircleIcon {...icon} />,
+        name: "notifications",
+        path: "/admin/notifications",
+        element: <Notifications />,
       },
     ],
   },

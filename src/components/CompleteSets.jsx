@@ -3,108 +3,53 @@ import { useNavigate } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { API_ENDPOINTS } from '@/config/api';
 
-const Gifting = () => {
+const CompleteSets = () => {
   const navigate = useNavigate();
   const [availabilityFilter, setAvailabilityFilter] = useState('');
   const [priceFilter, setPriceFilter] = useState('');
   const [sortBy, setSortBy] = useState('best-selling');
   const [currentPage, setCurrentPage] = useState(1);
-  const [products, setProducts] = useState([]);
+  const [completeSets, setCompleteSets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const productsPerPage = 12;
 
-  // Fetch products and complete sets with includeInGift = true
+  // Fetch complete sets
   useEffect(() => {
-    const fetchGiftItems = async () => {
+    const fetchCompleteSets = async () => {
       try {
         setLoading(true);
         setError('');
-        const timestamp = Date.now();
-        
-        // Fetch products with includeInGift = true
-        const productsUrl = `${API_ENDPOINTS.PRODUCTS.GET_ALL}?includeInGift=true&isActive=true&_t=${timestamp}`;
-        console.log('Fetching gift products from:', productsUrl);
-        
-        const productsResponse = await fetch(productsUrl, {
-          method: 'GET',
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
-        });
-        
-        if (!productsResponse.ok) {
-          throw new Error(`HTTP error! status: ${productsResponse.status}`);
+        const response = await fetch(`${API_ENDPOINTS.COMPLETE_SETS.GET_ALL}?isActive=true`);
+        const data = await response.json();
+
+        if (data.success) {
+          // Map API complete sets to component format
+          const mappedSets = (data.data.sets || []).map((set) => ({
+            id: set._id,
+            _id: set._id,
+            name: set.setName,
+            price: set.salePrice || set.originalPrice,
+            originalPrice: set.originalPrice,
+            salePrice: set.salePrice,
+            onSale: !!set.salePrice,
+            image: set.images && set.images.length > 0 ? set.images[0] : '',
+            description: set.description || null,
+            category: set.category,
+          }));
+          setCompleteSets(mappedSets);
+        } else {
+          setError(data.message || 'Failed to fetch complete sets');
         }
-        
-        const productsData = await productsResponse.json();
-        console.log('Gift products API response:', productsData);
-        console.log('Products count:', productsData.data?.products?.length || 0);
-
-        // Fetch complete sets with includeInGift = true
-        const setsUrl = `${API_ENDPOINTS.COMPLETE_SETS.GET_ALL}?includeInGift=true&isActive=true&_t=${timestamp}`;
-        console.log('Fetching gift complete sets from:', setsUrl);
-        
-        const setsResponse = await fetch(setsUrl, {
-          method: 'GET',
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
-        });
-        
-        if (!setsResponse.ok) {
-          throw new Error(`HTTP error! status: ${setsResponse.status}`);
-        }
-        
-        const setsData = await setsResponse.json();
-        console.log('Gift complete sets API response:', setsData);
-        console.log('Complete sets count:', setsData.data?.sets?.length || 0);
-
-        // Map products to component format
-        const mappedProducts = (productsData.data?.products || []).map((product) => ({
-          id: product._id,
-          _id: product._id,
-          name: product.productName,
-          price: product.salePrice || product.originalPrice,
-          originalPrice: product.originalPrice,
-          salePrice: product.salePrice,
-          onSale: !!product.salePrice,
-          image: product.images && product.images.length > 0 ? product.images[0] : '',
-          tagline: product.tagline || null,
-          type: 'product'
-        }));
-
-        // Map complete sets to component format
-        const mappedSets = (setsData.data?.sets || []).map((set) => ({
-          id: set._id,
-          _id: set._id,
-          name: set.setName,
-          price: set.salePrice || set.originalPrice,
-          originalPrice: set.originalPrice,
-          salePrice: set.salePrice,
-          onSale: !!set.salePrice,
-          image: set.images && set.images.length > 0 ? set.images[0] : '',
-          tagline: null,
-          type: 'complete-set'
-        }));
-
-        // Combine products and complete sets
-        const allItems = [...mappedProducts, ...mappedSets];
-        console.log('Total gift items (products + sets):', allItems.length);
-        setProducts(allItems);
       } catch (err) {
-        console.error('Fetch gift items error:', err);
+        console.error('Fetch complete sets error:', err);
         setError('Network error. Please check if backend server is running.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchGiftItems();
+    fetchCompleteSets();
   }, []);
 
   // Scroll to top on component mount and page change
@@ -112,19 +57,18 @@ const Gifting = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);
 
-  // Filter and sort products
-  const filteredAndSortedProducts = useMemo(() => {
-    let filtered = [...products];
+  // Filter and sort complete sets
+  const filteredAndSortedSets = useMemo(() => {
+    let filtered = [...completeSets];
 
     // Apply availability filter
     if (availabilityFilter === 'in-stock') {
-      // All products are in stock for now
       filtered = filtered;
     } else if (availabilityFilter === 'out-of-stock') {
       filtered = [];
     }
 
-    // Apply price filter (use salePrice if available, otherwise originalPrice)
+    // Apply price filter
     if (priceFilter) {
       if (priceFilter === '0-1000') {
         filtered = filtered.filter(p => (p.salePrice || p.originalPrice || p.price) < 1000);
@@ -143,7 +87,7 @@ const Gifting = () => {
       }
     }
 
-    // Apply sorting (use salePrice if available, otherwise originalPrice)
+    // Apply sorting
     if (sortBy === 'price-low') {
       filtered.sort((a, b) => {
         const priceA = a.salePrice || a.originalPrice || a.price;
@@ -157,21 +101,19 @@ const Gifting = () => {
         return priceB - priceA;
       });
     } else if (sortBy === 'best-selling') {
-      // Keep original order for best selling
       filtered = filtered;
     } else if (sortBy === 'newest') {
-      // Reverse order for newest
       filtered = filtered.reverse();
     }
 
     return filtered;
-  }, [products, availabilityFilter, priceFilter, sortBy]);
+  }, [completeSets, availabilityFilter, priceFilter, sortBy]);
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredAndSortedProducts.length / productsPerPage);
+  const totalPages = Math.ceil(filteredAndSortedSets.length / productsPerPage);
   const startIndex = (currentPage - 1) * productsPerPage;
   const endIndex = startIndex + productsPerPage;
-  const currentProducts = filteredAndSortedProducts.slice(startIndex, endIndex);
+  const currentSets = filteredAndSortedSets.slice(startIndex, endIndex);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -210,12 +152,12 @@ const Gifting = () => {
       <div className="container mx-auto px-4 sm:px-6 md:px-8">
         {/* Title */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6" style={{ fontFamily: "'Poppins', sans-serif" }}>
-          Gifting
+          Complete Sets
         </h1>
 
         {/* Description */}
         <p className="text-white text-sm sm:text-base md:text-lg mb-8 sm:mb-10 md:mb-12 leading-relaxed" style={{ fontFamily: "'Poppins', sans-serif" }}>
-          Celebrate every moment with thoughtful gifts from our silver jewelry gifting collection. Make this Diwali unforgettable with SilverLab's exclusive 925 sterling silver gifting collection. From elegant rings and pendants to thoughtful jewelry sets, each piece is crafted to express love, purity, and timeless elegance. Whether for family, friends, or someone special—gift them the sparkle of real 925 silver this festive season.
+          Discover our exquisite collection of complete jewelry sets. Each set is carefully curated with matching pieces crafted from 925 sterling silver, designed to create a cohesive and elegant look. Perfect for special occasions or as a complete wardrobe addition.
         </p>
 
         {/* Filter and Sort Bar */}
@@ -261,7 +203,7 @@ const Gifting = () => {
               <option value="price-high">Price: High to Low</option>
               <option value="newest">Newest</option>
             </select>
-            <span className="text-gray-400 text-sm sm:text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>{filteredAndSortedProducts.length} items</span>
+            <span className="text-gray-400 text-sm sm:text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>{filteredAndSortedSets.length} sets</span>
           </div>
         </div>
 
@@ -269,7 +211,7 @@ const Gifting = () => {
         {loading && (
           <div className="text-center py-12">
             <p className="text-white text-lg" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Loading products...
+              Loading complete sets...
             </p>
           </div>
         )}
@@ -284,88 +226,65 @@ const Gifting = () => {
         )}
 
         {/* Empty State */}
-        {!loading && !error && filteredAndSortedProducts.length === 0 && (
+        {!loading && !error && filteredAndSortedSets.length === 0 && (
           <div className="text-center py-12">
             <p className="text-white text-lg" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              No gift products available at the moment.
+              No complete sets available at the moment.
             </p>
           </div>
         )}
 
-        {/* Products Grid */}
-        {!loading && !error && filteredAndSortedProducts.length > 0 && (
+        {/* Complete Sets Grid */}
+        {!loading && !error && filteredAndSortedSets.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-8 sm:mb-10 md:mb-12">
-            {currentProducts.map((product) => (
-            <div 
-              key={product.id} 
-              onClick={() => {
-                if (product.type === 'complete-set') {
-                  navigate('/complete-sets');
-                } else {
-                  navigate(`/product/${product._id || product.id}`);
-                }
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="bg-black group cursor-pointer relative"
-            >
-              {/* Product Image */}
-              <div className="relative aspect-square overflow-hidden mb-3 sm:mb-4">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                {/* Sale Badge */}
-                {product.onSale && (
-                  <span className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 bg-red-500 text-white text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 rounded">
-                    Sale
-                  </span>
-                )}
-                {/* Complete Set Badge */}
-                {product.type === 'complete-set' && (
-                  <span className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-green-500 text-white text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 rounded z-10">
-                    Set
-                  </span>
-                )}
-                {/* Vertical Tagline Text */}
-                {product.tagline && (
-                  <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10">
-                    <p
-                      className="text-white text-[10px] sm:text-xs font-medium"
-                      style={{
-                        writingMode: 'vertical-rl',
-                        textOrientation: 'mixed',
-                        transform: 'rotate(180deg)'
-                      }}
-                    >
-                      {product.tagline}
-                    </p>
-                  </div>
-                )}
-              </div>
+            {currentSets.map((set) => (
+              <div 
+                key={set.id} 
+                onClick={() => {
+                  // Navigate to complete set detail page (you may need to create this)
+                  // For now, we'll navigate to a product detail-like page
+                  navigate(`/complete-set/${set._id || set.id}`);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="bg-black group cursor-pointer relative"
+              >
+                {/* Set Image */}
+                <div className="relative aspect-square overflow-hidden mb-3 sm:mb-4">
+                  <img
+                    src={set.image || '/placeholder-image.jpg'}
+                    alt={set.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  {/* Sale Badge */}
+                  {set.onSale && (
+                    <span className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 border border-white text-white text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 rounded">
+                      Sale
+                    </span>
+                  )}
+                </div>
 
-              {/* Product Info */}
-              <div>
-                <h3 className="text-white text-sm sm:text-base font-medium mb-2 line-clamp-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                  {product.name}
-                </h3>
-                {product.onSale && product.originalPrice ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-white text-sm sm:text-base font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                      Rs. {product.salePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-gray-400 text-xs sm:text-sm line-through" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                      Rs. {product.originalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-white text-sm sm:text-base font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                    Rs. {product.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                )}
+                {/* Set Info */}
+                <div>
+                  <h3 className="text-white text-sm sm:text-base font-medium mb-2 line-clamp-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                    {set.name}
+                  </h3>
+                  {set.onSale && set.originalPrice ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-white text-sm sm:text-base font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                        Rs. {set.salePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                      <span className="text-gray-400 text-xs sm:text-sm line-through" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                        Rs. {set.originalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-white text-sm sm:text-base font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                      Rs. {set.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
         )}
 
@@ -374,7 +293,7 @@ const Gifting = () => {
           <div className="flex flex-col items-center gap-4 sm:gap-6 mt-8 sm:mt-10 md:mt-12">
             {/* Showing results text */}
             <div className="text-gray-400 text-sm sm:text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedProducts.length)} of {filteredAndSortedProducts.length} products
+              Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedSets.length)} of {filteredAndSortedSets.length} sets
             </div>
             
             {/* Pagination Controls */}
@@ -434,5 +353,5 @@ const Gifting = () => {
   );
 };
 
-export default Gifting;
+export default CompleteSets;
 

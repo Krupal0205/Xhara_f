@@ -303,24 +303,42 @@ export function AddProductPanel() {
         ? API_ENDPOINTS.PRODUCTS.UPDATE(editingProductId)
         : API_ENDPOINTS.PRODUCTS.CREATE;
       
+      // Handle salePrice
+      let salePriceValue = null;
+      if (salePrice && salePrice.trim()) {
+        const parsed = parseFloat(salePrice.trim());
+        if (!isNaN(parsed) && parsed > 0) {
+          salePriceValue = parsed;
+        }
+      }
+      
+      const requestBody = {
+        productName: productName.trim(),
+        category: selectedCategory,
+        subCategory: selectedSubCategory,
+        originalPrice: parseFloat(originalPrice),
+        description: description.trim(),
+        images: imageUrls,
+        features: productFeatures,
+        ringSizes: isRing ? ringSizes : [],
+        includeInGift: includeInGift
+      };
+      
+      // For edit mode: always include salePrice (null if empty, to allow removing sale price)
+      // For create mode: only include if it has a valid value
+      if (isEditMode) {
+        requestBody.salePrice = salePriceValue; // Can be null to remove existing sale price
+      } else if (salePriceValue !== null && salePriceValue > 0) {
+        requestBody.salePrice = salePriceValue; // Only include if valid for new products
+      }
+      
       const response = await fetch(url, {
         method: isEditMode ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          productName: productName.trim(),
-          category: selectedCategory,
-          subCategory: selectedSubCategory,
-          originalPrice: parseFloat(originalPrice),
-          salePrice: salePrice ? parseFloat(salePrice) : null,
-          description: description.trim(),
-          images: imageUrls,
-          features: productFeatures,
-          ringSizes: isRing ? ringSizes : [],
-          includeInGift: includeInGift
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -353,7 +371,21 @@ export function AddProductPanel() {
           setSuccess("");
         }, 2000);
       } else {
-        setError(data.message || (isEditMode ? "Failed to update product. Please try again." : "Failed to add product. Please try again."));
+        // Handle validation errors
+        let errorMessage = data.message || (isEditMode ? "Failed to update product. Please try again." : "Failed to add product. Please try again.");
+        
+        // If there are detailed validation errors, show them
+        if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+          const errorMessages = data.errors.map(err => {
+            if (typeof err === 'string') return err;
+            if (err.msg) return err.msg;
+            if (err.message) return err.message;
+            return JSON.stringify(err);
+          });
+          errorMessage = errorMessages.join('. ');
+        }
+        
+        setError(errorMessage);
       }
     } catch (err) {
       console.error('Add product error:', err);

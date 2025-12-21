@@ -7,3 +7,4 @@ export * from "@/widgets/layout/add-product-panel";
 export * from "@/widgets/layout/logout-modal";
 export * from "@/widgets/layout/confirm-modal";
 export * from "@/widgets/layout/alert-modal";
+export * from "@/widgets/layout/add-complete-set-panel";

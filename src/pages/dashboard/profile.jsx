@@ -30,21 +30,29 @@ import { Menu, MenuHandler, MenuList, MenuItem, IconButton } from "@material-tai
 import { Link } from "react-router-dom";
 import { ProfileInfoCard, MessageCard } from "@/widgets/cards";
 import { platformSettingsData, conversationsData, projectsData } from "@/data";
-import { AddProductPanel, ConfirmModal } from "@/widgets/layout";
+import { AddProductPanel, ConfirmModal, AddCompleteSetPanel } from "@/widgets/layout";
 import { useMaterialTailwindController, setOpenAddProduct } from "@/context";
 import { API_ENDPOINTS } from "@/config/api";
 
 export function Profile() {
   const [controller, dispatch] = useMaterialTailwindController();
   const [products, setProducts] = useState([]);
+  const [completeSets, setCompleteSets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [setsLoading, setSetsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [setsError, setSetsError] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [openProductModal, setOpenProductModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ open: false, productId: null });
+  const [confirmSetModal, setConfirmSetModal] = useState({ open: false, setId: null });
+  const [activeTab, setActiveTab] = useState("products");
+  const [openAddSetPanel, setOpenAddSetPanel] = useState(false);
+  const [editingSet, setEditingSet] = useState(null);
 
   useEffect(() => {
     fetchProducts();
+    fetchCompleteSets();
   }, []);
 
   const fetchProducts = async () => {
@@ -93,6 +101,26 @@ export function Profile() {
     setConfirmModal({ open: true, productId });
   };
 
+  const fetchCompleteSets = async () => {
+    try {
+      setSetsLoading(true);
+      setSetsError("");
+      const response = await fetch(API_ENDPOINTS.COMPLETE_SETS.GET_ALL + '?isActive=true');
+      const data = await response.json();
+
+      if (data.success) {
+        setCompleteSets(data.data.sets || []);
+      } else {
+        setSetsError(data.message || "Failed to fetch complete sets");
+      }
+    } catch (err) {
+      console.error("Fetch complete sets error:", err);
+      setSetsError("Network error. Please check if backend server is running.");
+    } finally {
+      setSetsLoading(false);
+    }
+  };
+
   const handleDeleteProduct = async () => {
     const productId = confirmModal.productId;
     if (!productId) return;
@@ -129,15 +157,72 @@ export function Profile() {
     }
   };
 
+  const handleDeleteSet = async () => {
+    const setId = confirmSetModal.setId;
+    if (!setId) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setSetsError("Please login to delete complete sets");
+        setConfirmSetModal({ open: false, setId: null });
+        return;
+      }
+
+      const response = await fetch(API_ENDPOINTS.COMPLETE_SETS.DELETE(setId), {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setCompleteSets(completeSets.filter((s) => s._id !== setId));
+      } else {
+        setSetsError(data.message || "Failed to delete complete set");
+      }
+    } catch (err) {
+      console.error("Delete complete set error:", err);
+      setSetsError("Network error. Please check if backend server is running.");
+    } finally {
+      setConfirmSetModal({ open: false, setId: null });
+    }
+  };
+
   return (
     <>
       <AddProductPanel />
+      <AddCompleteSetPanel
+        open={openAddSetPanel}
+        onClose={() => {
+          setOpenAddSetPanel(false);
+          setEditingSet(null);
+        }}
+        onSuccess={() => {
+          fetchCompleteSets();
+          setEditingSet(null);
+        }}
+        editingSet={editingSet}
+      />
       <ConfirmModal
         open={confirmModal.open}
         onClose={() => setConfirmModal({ open: false, productId: null })}
         onConfirm={handleDeleteProduct}
         title="Delete Product"
         message="Are you sure you want to delete this product? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmColor="red"
+      />
+      <ConfirmModal
+        open={confirmSetModal.open}
+        onClose={() => setConfirmSetModal({ open: false, setId: null })}
+        onConfirm={handleDeleteSet}
+        title="Delete Complete Set"
+        message="Are you sure you want to delete this complete set? This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
         confirmColor="red"
@@ -171,19 +256,41 @@ export function Profile() {
                 <TabsHeader>
                   <Tab 
                     value="app"
-                    onClick={() => setOpenAddProduct(dispatch, true)}
+                    onClick={() => {
+                      if (activeTab === "products") {
+                        setOpenAddProduct(dispatch, true);
+                      } else {
+                        setOpenAddSetPanel(true);
+                      }
+                    }}
                   >
                     <PlusIcon className="-mt-1 mr-2 inline-block h-5 w-5" />
-                    Add Product
+                    {activeTab === "products" ? "Add Product" : "Add Complete Set"}
                   </Tab>
                 </TabsHeader>
               </Tabs>
             </div>
           </div>
+          
+          {/* Tabs for Products and Complete Sets */}
           <div className="px-4 pb-4">
-            <Typography variant="h6" color="blue-gray" className="mb-4">
-              Projects
-            </Typography>
+            <Tabs value={activeTab}>
+              <TabsHeader className="mb-6">
+                <Tab value="products" onClick={() => setActiveTab("products")}>
+                  Products
+                </Tab>
+                <Tab value="complete-sets" onClick={() => setActiveTab("complete-sets")}>
+                  Complete Sets
+                </Tab>
+              </TabsHeader>
+            </Tabs>
+
+            {/* Products Tab */}
+            {activeTab === "products" && (
+              <>
+                <Typography variant="h6" color="blue-gray" className="mb-4">
+                  Products
+                </Typography>
             
             {loading ? (
               <div className="text-center py-8">
@@ -312,6 +419,144 @@ export function Profile() {
                   </Card>
                 ))}
               </div>
+            )}
+              </>
+            )}
+
+            {/* Complete Sets Tab */}
+            {activeTab === "complete-sets" && (
+              <>
+                <Typography variant="h6" color="blue-gray" className="mb-4">
+                  Complete Sets
+                </Typography>
+                
+                {setsLoading ? (
+                  <div className="text-center py-8">
+                    <Typography variant="small" color="blue-gray" className="text-blue-gray-500">
+                      Loading complete sets...
+                    </Typography>
+                  </div>
+                ) : setsError ? (
+                  <div className="text-center py-8">
+                    <Typography variant="small" color="red" className="text-red-500">
+                      {setsError}
+                    </Typography>
+                  </div>
+                ) : completeSets.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Typography variant="small" color="blue-gray" className="text-blue-gray-500">
+                      No complete sets added yet. Click "Add Complete Set" to get started!
+                    </Typography>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {completeSets.map((set) => (
+                      <Card 
+                        key={set._id} 
+                        className="border border-blue-gray-100 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <CardBody className="p-4">
+                          {/* Set Image */}
+                          <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden bg-gray-100">
+                            {set.images && set.images.length > 0 ? (
+                              <img
+                                src={set.images[0]}
+                                alt={set.setName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                                <Typography variant="small" color="blue-gray" className="text-blue-gray-400">
+                                  No Image
+                                </Typography>
+                              </div>
+                            )}
+                            {set.salePrice && (
+                              <span className="absolute top-2 right-2 border border-white text-white text-xs font-semibold px-2 py-1 rounded">
+                                Sale
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Set Info */}
+                          <div>
+                            <Typography variant="h6" color="blue-gray" className="mb-2 line-clamp-2">
+                              {set.setName}
+                            </Typography>
+                            
+                            {/* Price */}
+                            <div className="flex items-center gap-2 mb-2">
+                              {set.salePrice ? (
+                                <>
+                                  <Typography variant="h6" color="red" className="font-bold">
+                                    ₹{set.salePrice.toLocaleString('en-IN')}
+                                  </Typography>
+                                  <Typography variant="small" color="blue-gray" className="line-through text-blue-gray-400">
+                                    ₹{set.originalPrice.toLocaleString('en-IN')}
+                                  </Typography>
+                                </>
+                              ) : (
+                                <Typography variant="h6" color="blue-gray" className="font-bold">
+                                  ₹{set.originalPrice.toLocaleString('en-IN')}
+                                </Typography>
+                              )}
+                            </div>
+
+                            {/* Subcategories Count */}
+                            <Typography variant="small" color="blue-gray" className="text-blue-gray-500 mb-3">
+                              {set.subCategories?.length || 0} subcategory(ies): {set.subCategories?.join(', ').replace(/womens-|mens-/gi, '').replace(/-/g, ' ') || 'N/A'}
+                            </Typography>
+                            
+                            {/* Category & Actions */}
+                            <div className="mt-3 flex items-center justify-between flex-wrap gap-2">
+                              <span className="px-2.5 py-1 bg-blue-gray-50 text-blue-gray-700 text-xs font-medium rounded-full border border-blue-gray-200">
+                                {set.category.charAt(0).toUpperCase() + set.category.slice(1)}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <Menu>
+                                  <MenuHandler>
+                                    <IconButton
+                                      variant="text"
+                                      color="blue-gray"
+                                      size="sm"
+                                      className="h-8 w-8"
+                                    >
+                                      <EllipsisVerticalIcon className="h-5 w-5" />
+                                    </IconButton>
+                                  </MenuHandler>
+                                  <MenuList>
+                                    <MenuItem
+                                      className="flex items-center gap-2"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingSet(set);
+                                        setOpenAddSetPanel(true);
+                                      }}
+                                    >
+                                      <PencilIcon className="h-4 w-4" />
+                                      Edit
+                                    </MenuItem>
+                                    <MenuItem
+                                      className="flex items-center gap-2 text-red-600"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setConfirmSetModal({ open: true, setId: set._id });
+                                      }}
+                                    >
+                                      <TrashIcon className="h-4 w-4" />
+                                      Delete
+                                    </MenuItem>
+                                  </MenuList>
+                                </Menu>
+                              </div>
+                            </div>
+                          </div>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </CardBody>

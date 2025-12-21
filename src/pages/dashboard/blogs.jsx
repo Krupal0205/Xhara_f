@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -16,19 +16,12 @@ import {
 } from "@heroicons/react/24/solid";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { ConfirmModal } from "@/widgets/layout";
+import { API_ENDPOINTS } from "@/config/api";
 
 export function Blogs() {
-  const [blogs, setBlogs] = useState([
-    {
-      id: 1,
-      title: "Welcome to Silverlab",
-      content: "Discover our latest collection of silver jewelry...",
-      author: "Admin",
-      date: "2024-01-15",
-      image: "",
-      published: true,
-    },
-  ]);
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -42,7 +35,11 @@ export function Blogs() {
     published: false,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  useEffect(() => {
     if (isAddModalOpen || isEditModalOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -53,36 +50,113 @@ export function Blogs() {
     };
   }, [isAddModalOpen, isEditModalOpen]);
 
-  const handleAddBlog = () => {
-    const newBlog = {
-      id: blogs.length + 1,
-      ...formData,
-      date: new Date().toISOString().split("T")[0],
-    };
-    setBlogs([...blogs, newBlog]);
-    resetForm();
-    setIsAddModalOpen(false);
+  const fetchBlogs = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.BLOGS.GET_ALL, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setBlogs(data.data.blogs || []);
+      } else {
+        setError(data.message || "Failed to fetch blogs");
+      }
+    } catch (err) {
+      console.error("Fetch blogs error:", err);
+      setError("Network error. Please check if backend server is running.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditBlog = () => {
-    setBlogs(
-      blogs.map((blog) =>
-        blog.id === selectedBlog.id ? { ...selectedBlog, ...formData } : blog
-      )
-    );
-    resetForm();
-    setIsEditModalOpen(false);
-    setSelectedBlog(null);
+  const handleAddBlog = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.BLOGS.CREATE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        resetForm();
+        setIsAddModalOpen(false);
+        fetchBlogs();
+      } else {
+        setError(data.message || "Failed to create blog");
+      }
+    } catch (err) {
+      console.error('Create blog error:', err);
+      setError("Network error. Please try again.");
+    }
+  };
+
+  const handleEditBlog = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.BLOGS.UPDATE(selectedBlog._id), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        resetForm();
+        setIsEditModalOpen(false);
+        setSelectedBlog(null);
+        fetchBlogs();
+      } else {
+        setError(data.message || "Failed to update blog");
+      }
+    } catch (err) {
+      console.error('Update blog error:', err);
+      setError("Network error. Please try again.");
+    }
   };
 
   const handleDeleteClick = (id) => {
     setConfirmModal({ open: true, blogId: id });
   };
 
-  const handleDeleteBlog = () => {
+  const handleDeleteBlog = async () => {
     const blogId = confirmModal.blogId;
     if (blogId) {
-      setBlogs(blogs.filter((blog) => blog.id !== blogId));
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(API_ENDPOINTS.BLOGS.DELETE(blogId), {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          fetchBlogs();
+        } else {
+          setError(data.message || "Failed to delete blog");
+        }
+      } catch (err) {
+        console.error('Delete blog error:', err);
+        setError("Network error. Please try again.");
+      }
     }
     setConfirmModal({ open: false, blogId: null });
   };
@@ -90,11 +164,11 @@ export function Blogs() {
   const openEditModal = (blog) => {
     setSelectedBlog(blog);
     setFormData({
-      title: blog.title,
-      content: blog.content,
-      author: blog.author,
-      image: blog.image,
-      published: blog.published,
+      title: blog.title || "",
+      content: blog.content || "",
+      author: blog.author || "",
+      image: blog.image || "",
+      published: blog.published || false,
     });
     setIsEditModalOpen(true);
   };
@@ -146,6 +220,7 @@ export function Blogs() {
             className="flex items-center gap-2"
             onClick={() => {
               resetForm();
+              setError("");
               setIsAddModalOpen(true);
             }}
           >
@@ -154,7 +229,19 @@ export function Blogs() {
           </Button>
         </CardHeader>
         <CardBody className="px-0 pt-0 pb-2">
-          {blogs.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <Typography variant="h6" color="blue-gray" className="mb-2">
+                Loading blogs...
+              </Typography>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <Typography variant="h6" color="red" className="mb-2">
+                {error}
+              </Typography>
+            </div>
+          ) : blogs.length === 0 ? (
             <div className="text-center py-12">
               <Typography variant="h6" color="blue-gray" className="mb-2">
                 No blogs found
@@ -166,7 +253,7 @@ export function Blogs() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
               {blogs.map((blog) => (
-                <Card key={blog.id} className="border border-blue-gray-100">
+                <Card key={blog._id} className="border border-blue-gray-100">
                   <CardHeader className="h-48 relative">
                     {blog.image ? (
                       <img
@@ -202,7 +289,7 @@ export function Blogs() {
                     </Typography>
                     <div className="flex items-center justify-between text-xs text-blue-gray-500 mb-4">
                       <span>{blog.author}</span>
-                      <span>{blog.date}</span>
+                      <span>{new Date(blog.createdAt).toLocaleDateString()}</span>
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -220,7 +307,7 @@ export function Blogs() {
                         variant="outlined"
                         color="red"
                         className="flex items-center gap-1"
-                        onClick={() => handleDeleteClick(blog.id)}
+                        onClick={() => handleDeleteClick(blog._id)}
                       >
                         <TrashIcon className="h-4 w-4" />
                         Delete
