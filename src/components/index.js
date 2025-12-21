@@ -14,6 +14,8 @@ export { default as LuxuryPackaging } from './LuxuryPackaging';
 export { default as Gifting } from './Gifting';
 export { default as Products } from './Products';
 export { default as ProductDetail } from './ProductDetail';
+export { default as Cart } from './Cart';
+export { default as Checkout } from './Checkout';
 export { default as ReviewsSection } from './ReviewsSection';
 export { default as BlogSection } from './BlogSection';
 export { default as Contact } from './Contact';

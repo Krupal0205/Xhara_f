@@ -30,7 +30,7 @@ import { Menu, MenuHandler, MenuList, MenuItem, IconButton } from "@material-tai
 import { Link } from "react-router-dom";
 import { ProfileInfoCard, MessageCard } from "@/widgets/cards";
 import { platformSettingsData, conversationsData, projectsData } from "@/data";
-import { AddProductPanel } from "@/widgets/layout";
+import { AddProductPanel, ConfirmModal } from "@/widgets/layout";
 import { useMaterialTailwindController, setOpenAddProduct } from "@/context";
 import { API_ENDPOINTS } from "@/config/api";
 
@@ -41,6 +41,7 @@ export function Profile() {
   const [error, setError] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [openProductModal, setOpenProductModal] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ open: false, productId: null });
 
   useEffect(() => {
     fetchProducts();
@@ -88,15 +89,19 @@ export function Profile() {
     setOpenProductModal(true);
   };
 
-  const handleDeleteProduct = async (productId) => {
-    if (!window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
-      return;
-    }
+  const handleDeleteClick = (productId) => {
+    setConfirmModal({ open: true, productId });
+  };
+
+  const handleDeleteProduct = async () => {
+    const productId = confirmModal.productId;
+    if (!productId) return;
 
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         setError("Please login to delete products");
+        setConfirmModal({ open: false, productId: null });
         return;
       }
 
@@ -119,12 +124,24 @@ export function Profile() {
     } catch (err) {
       console.error("Delete product error:", err);
       setError("Network error. Please check if backend server is running.");
+    } finally {
+      setConfirmModal({ open: false, productId: null });
     }
   };
 
   return (
     <>
       <AddProductPanel />
+      <ConfirmModal
+        open={confirmModal.open}
+        onClose={() => setConfirmModal({ open: false, productId: null })}
+        onConfirm={handleDeleteProduct}
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmColor="red"
+      />
       <div className="relative mt-8 h-72 w-full overflow-hidden rounded-xl bg-[url('/img/background-image.png')] bg-cover	bg-center">
         <div className="absolute inset-0 h-full w-full bg-gray-900/75" />
       </div>
@@ -280,7 +297,7 @@ export function Profile() {
                                   className="flex items-center gap-2 text-red-600"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDeleteProduct(product._id);
+                                    handleDeleteClick(product._id);
                                   }}
                                 >
                                   <TrashIcon className="h-4 w-4" />

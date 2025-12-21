@@ -1,17 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { FiArrowLeft, FiShoppingCart } from 'react-icons/fi';
 import { API_ENDPOINTS } from '@/config/api';
+import { useCart } from '@/context/CartContext';
+import { AlertModal } from '@/widgets/layout';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedRingSize, setSelectedRingSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('Silver');
   const [quantity, setQuantity] = useState(1);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  const hasAutoAddedToCart = useRef(false);
+  const [alertModal, setAlertModal] = useState({ open: false, message: '' });
 
   useEffect(() => {
     // Scroll to top when component mounts or id changes
@@ -27,10 +36,60 @@ const ProductDetail = () => {
 
         if (data.success) {
           setProduct(data.data.product);
+          
+          // Get URL parameters for auto-add to cart
+          const addToCartParam = searchParams.get('addToCart');
+          const quantityParam = searchParams.get('quantity');
+          const ringSizeParam = searchParams.get('ringSize');
+          const colorParam = searchParams.get('color');
+          
           // Set default ring size if available
           if (data.data.product.ringSizes && data.data.product.ringSizes.length > 0) {
-            setSelectedRingSize(data.data.product.ringSizes[0]);
+            const defaultRingSize = ringSizeParam || data.data.product.ringSizes[0];
+            setSelectedRingSize(defaultRingSize);
+          } else if (ringSizeParam) {
+            setSelectedRingSize(ringSizeParam);
           }
+          
+          // Set quantity from URL or default to 1
+          if (quantityParam) {
+            const qty = parseInt(quantityParam, 10);
+            if (qty > 0) {
+              setQuantity(qty);
+            }
+          }
+          
+          // Set color from URL or default to Silver
+          if (colorParam) {
+            setSelectedColor(colorParam);
+          }
+          
+          // Auto-add to cart if addToCart=true in URL
+          if (addToCartParam === 'true' && !hasAutoAddedToCart.current) {
+            hasAutoAddedToCart.current = true;
+            const qty = quantityParam ? parseInt(quantityParam, 10) : 1;
+            const ringSize = ringSizeParam || (data.data.product.ringSizes && data.data.product.ringSizes.length > 0 ? data.data.product.ringSizes[0] : '');
+            const color = colorParam || 'Silver';
+            
+            addToCart(data.data.product, qty, ringSize, color);
+            
+            // Remove query parameters and optionally redirect to cart
+            const redirectToCart = searchParams.get('redirectToCart');
+            if (redirectToCart === 'true') {
+              // Remove query parameters
+              setSearchParams({});
+              // Navigate to cart after a short delay to ensure cart is updated
+              setTimeout(() => {
+                navigate('/cart');
+              }, 100);
+            } else {
+              // Just remove query parameters without redirecting
+              setSearchParams({});
+            }
+          }
+          
+          // Fetch related products
+          fetchRelatedProducts(data.data.product);
         } else {
           setError(data.message || 'Product not found');
         }
@@ -45,22 +104,77 @@ const ProductDetail = () => {
     if (id) {
       fetchProduct();
     }
-  }, [id]);
+  }, [id, searchParams, addToCart, navigate, setSearchParams]);
+
+  const fetchRelatedProducts = async (currentProduct) => {
+    try {
+      setLoadingRelated(true);
+      
+      // Build query for related products
+      const params = new URLSearchParams();
+      params.append('isActive', 'true');
+      
+      // If subcategory exists (e.g., "womens-rings"), filter by both category and subcategory
+      // This ensures we get only products from the same subcategory (e.g., other women's rings)
+      if (currentProduct.subCategory) {
+        params.append('subCategory', currentProduct.subCategory);
+        if (currentProduct.category) {
+          params.append('category', currentProduct.category);
+        }
+      } else if (currentProduct.category) {
+        // If no subcategory (from "All" page), filter by category only
+        // This shows all products from that category (e.g., all women's products)
+        params.append('category', currentProduct.category);
+      }
+      
+      const response = await fetch(`${API_ENDPOINTS.PRODUCTS.GET_ALL}?${params.toString()}`);
+      const data = await response.json();
+      
+      if (data.success && data.data.products) {
+        // Filter out current product - show all others
+        const filtered = data.data.products
+          .filter(p => p._id !== currentProduct._id)
+          .map((product) => ({
+            id: product._id,
+            _id: product._id,
+            name: product.productName,
+            price: product.salePrice || product.originalPrice,
+            originalPrice: product.originalPrice,
+            salePrice: product.salePrice,
+            onSale: !!product.salePrice,
+            image: product.images && product.images.length > 0 ? product.images[0] : '',
+            tagline: product.tagline || null,
+          }));
+        setRelatedProducts(filtered);
+      }
+    } catch (err) {
+      console.error('Fetch related products error:', err);
+    } finally {
+      setLoadingRelated(false);
+    }
+  };
 
   const handleQuantityChange = (delta) => {
     setQuantity(prev => Math.max(1, prev + delta));
   };
 
   const handleAddToCart = () => {
-    // TODO: Implement add to cart functionality
-    console.log('Add to cart:', { productId: id, quantity, ringSize: selectedRingSize });
-    alert('Product added to cart!');
+    if (!product) return;
+    
+    addToCart(product, quantity, selectedRingSize, selectedColor);
+    // Navigate to cart page
+    navigate('/cart');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBuyNow = () => {
-    // TODO: Implement buy now functionality
-    console.log('Buy now:', { productId: id, quantity, ringSize: selectedRingSize });
-    alert('Buy now functionality coming soon!');
+    if (!product) return;
+    
+    // Add product to cart first
+    addToCart(product, quantity, selectedRingSize, selectedColor);
+    // Navigate directly to checkout
+    navigate('/checkout');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (loading) {
@@ -277,6 +391,77 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Related Products Section */}
+      {relatedProducts.length > 0 && (
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 py-12 border-t border-gray-700">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-8" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            Related Products
+          </h2>
+          {loadingRelated ? (
+            <div className="text-center py-8">
+              <p className="text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>Loading related products...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {relatedProducts.map((relatedProduct) => (
+                <div
+                  key={relatedProduct.id}
+                  onClick={() => {
+                    navigate(`/product/${relatedProduct._id || relatedProduct.id}`);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="bg-black group cursor-pointer relative"
+                >
+                  {/* Product Image */}
+                  <div className="relative aspect-square overflow-hidden mb-3 sm:mb-4">
+                    <img
+                      src={relatedProduct.image || '/placeholder-image.jpg'}
+                      alt={relatedProduct.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {/* Sale Badge */}
+                    {relatedProduct.onSale && (
+                      <span className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 border border-white text-white text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 rounded">
+                        Sale
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Product Info */}
+                  <div>
+                    <h3 className="text-white text-sm sm:text-base font-medium mb-2 line-clamp-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                      {relatedProduct.name}
+                    </h3>
+                    {relatedProduct.onSale && relatedProduct.originalPrice ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-white text-sm sm:text-base font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                          Rs. {relatedProduct.salePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-gray-400 text-xs sm:text-sm line-through" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                          Rs. {relatedProduct.originalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-white text-sm sm:text-base font-semibold" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                        Rs. {relatedProduct.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      
+      <AlertModal
+        open={alertModal.open}
+        onClose={() => setAlertModal({ open: false, message: '' })}
+        title="Information"
+        message={alertModal.message}
+        buttonText="OK"
+      />
     </div>
   );
 };

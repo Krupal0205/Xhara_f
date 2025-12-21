@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiArrowLeft } from 'react-icons/fi';
+import { AlertModal } from '@/widgets/layout';
 
 const Contact = ({ onBack }) => {
   const [formData, setFormData] = useState({
@@ -8,6 +9,7 @@ const Contact = ({ onBack }) => {
     phone: '',
     comment: ''
   });
+  const [alertModal, setAlertModal] = useState({ open: false, message: '' });
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -25,7 +27,7 @@ const Contact = ({ onBack }) => {
     e.preventDefault();
     // Handle form submission here
     console.log('Form submitted:', formData);
-    alert('Thank you for your message! We will get back to you soon.');
+    setAlertModal({ open: true, message: 'Thank you for your message! We will get back to you soon.' });
     setFormData({ name: '', email: '', phone: '', comment: '' });
   };
 
@@ -133,6 +135,14 @@ const Contact = ({ onBack }) => {
           </form>
         </div>
       </div>
+      
+      <AlertModal
+        open={alertModal.open}
+        onClose={() => setAlertModal({ open: false, message: '' })}
+        title="Thank You"
+        message={alertModal.message}
+        buttonText="OK"
+      />
     </section>
   );
 };

@@ -15,6 +15,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/solid";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { ConfirmModal } from "@/widgets/layout";
 
 export function Blogs() {
   const [blogs, setBlogs] = useState([
@@ -32,6 +33,7 @@ export function Blogs() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ open: false, blogId: null });
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -73,10 +75,16 @@ export function Blogs() {
     setSelectedBlog(null);
   };
 
-  const handleDeleteBlog = (id) => {
-    if (window.confirm("Are you sure you want to delete this blog?")) {
-      setBlogs(blogs.filter((blog) => blog.id !== id));
+  const handleDeleteClick = (id) => {
+    setConfirmModal({ open: true, blogId: id });
+  };
+
+  const handleDeleteBlog = () => {
+    const blogId = confirmModal.blogId;
+    if (blogId) {
+      setBlogs(blogs.filter((blog) => blog.id !== blogId));
     }
+    setConfirmModal({ open: false, blogId: null });
   };
 
   const openEditModal = (blog) => {
@@ -114,6 +122,16 @@ export function Blogs() {
 
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
+      <ConfirmModal
+        open={confirmModal.open}
+        onClose={() => setConfirmModal({ open: false, blogId: null })}
+        onConfirm={handleDeleteBlog}
+        title="Delete Blog"
+        message="Are you sure you want to delete this blog?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmColor="red"
+      />
       <Card className="border border-blue-gray-100 shadow-sm">
         <CardHeader
           variant="gradient"
@@ -202,7 +220,7 @@ export function Blogs() {
                         variant="outlined"
                         color="red"
                         className="flex items-center gap-1"
-                        onClick={() => handleDeleteBlog(blog.id)}
+                        onClick={() => handleDeleteClick(blog.id)}
                       >
                         <TrashIcon className="h-4 w-4" />
                         Delete

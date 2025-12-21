@@ -4,9 +4,11 @@ import { FiSearch, FiShoppingCart, FiUser, FiMenu, FiX, FiChevronDown } from 're
 import { FaFacebook, FaPinterest, FaInstagram, FaYoutube } from 'react-icons/fa';
 import logo from '../image/logo.png';
 import { API_ENDPOINTS } from '../config/api.js';
+import { useCart } from '@/context/CartContext';
 
 const Header = ({ onContactClick }) => {
   const navigate = useNavigate();
+  const { getCartCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -212,10 +214,17 @@ const Header = ({ onContactClick }) => {
             </button>
             <button 
               className="p-1.5 sm:p-2 hover:bg-gray-900 rounded-full relative transition-colors"
-              onClick={() => setIsCartOpen(!isCartOpen)}
+              onClick={() => {
+                navigate('/cart');
+                setIsCartOpen(false);
+              }}
             >
               <FiShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-gray-200" />
-              <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] sm:text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">0</span>
+              {getCartCount() > 0 && (
+                <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] sm:text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
+                  {getCartCount()}
+                </span>
+              )}
             </button>
             <button 
               className="p-1.5 sm:p-2 hover:bg-gray-900 rounded-full transition-colors"
@@ -396,10 +405,24 @@ const Header = ({ onContactClick }) => {
           <div className="text-center py-6 sm:py-8">
             <p className="text-gray-200 mb-4 text-sm sm:text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>Item added to your cart</p>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              <button className="px-4 py-2 bg-white text-black rounded hover:bg-gray-200 transition-colors text-sm sm:text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              <button 
+                onClick={() => {
+                  navigate('/cart');
+                  setIsCartOpen(false);
+                }}
+                className="px-4 py-2 bg-white text-black rounded hover:bg-gray-200 transition-colors text-sm sm:text-base" 
+                style={{ fontFamily: "'Poppins', sans-serif" }}
+              >
                 View cart
               </button>
-              <button className="px-4 py-2 border border-gray-600 text-gray-200 rounded hover:bg-gray-900 transition-colors text-sm sm:text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              <button 
+                onClick={() => {
+                  navigate('/checkout');
+                  setIsCartOpen(false);
+                }}
+                className="px-4 py-2 border border-gray-600 text-gray-200 rounded hover:bg-gray-900 transition-colors text-sm sm:text-base" 
+                style={{ fontFamily: "'Poppins', sans-serif" }}
+              >
                 Check out
               </button>
             </div>
