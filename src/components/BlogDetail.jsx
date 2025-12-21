@@ -54,24 +54,7 @@ const BlogDetail = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-black min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-400 text-lg mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            {error}
-          </p>
-          <button
-            onClick={() => navigate('/blogs')}
-            className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
-          >
-            Back to Blogs
-          </button>
-        </div>
-      </div>
-    );
-  }
+
 
   if (!blog) {
     return null;
@@ -120,17 +103,7 @@ const BlogDetail = () => {
             </div>
           </div>
         </article>
-        {/* Back Button */}
-        <div className="flex justify-center">
-        <button
-          onClick={() => navigate('/blogs')}
-          className="flex items-center gap-2 text-white mb-6 sm:mb-8 hover:text-gray-300 transition-colors mt-10"
-          style={{ fontFamily: "'Poppins', sans-serif" }}
-        >
-          <FiArrowLeft className="w-5 h-5" />
-          <span className="text-sm sm:text-base">Back to Blogs</span>
-        </button>
-        </div>
+        
       </div>
     </div>
   );

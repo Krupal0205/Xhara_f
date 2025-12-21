@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import {
   Button,
@@ -75,12 +75,35 @@ export function Configurator() {
       .then((data) => setStars(formatNumber(data.stargazers_count, 1)));
   }, []);
 
+  // Prevent body scroll when configurator is open
+  useEffect(() => {
+    if (openConfigurator) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [openConfigurator]);
+
   return (
-    <aside
-      className={`fixed top-0 right-0 z-50 h-screen w-96 bg-white px-2.5 shadow-lg transition-transform duration-300 ${
-        openConfigurator ? "translate-x-0" : "translate-x-96"
-      }`}
-    >
+    <>
+      {/* Backdrop with blur - covers everything including sidebar */}
+      {openConfigurator && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[55] transition-opacity duration-300"
+          onClick={() => setOpenConfigurator(dispatch, false)}
+        />
+      )}
+      
+      {/* Configurator Panel */}
+      <aside
+        className={`fixed top-0 right-0 z-[60] h-screen w-96 bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
+          openConfigurator ? "translate-x-0" : "translate-x-96"
+        }`}
+      >
       <div className="flex items-start justify-between px-6 pt-8 pb-6">
         <div>
           <Typography variant="h5" color="blue-gray">
@@ -252,6 +275,7 @@ export function Configurator() {
         
       </div>
     </aside>
+    </>
   );
 }
 

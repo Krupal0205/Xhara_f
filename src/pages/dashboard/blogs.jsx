@@ -39,14 +39,15 @@ export function Blogs() {
     fetchBlogs();
   }, []);
 
+  // Prevent body scroll when modals are open
   useEffect(() => {
     if (isAddModalOpen || isEditModalOpen) {
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = "unset";
     };
   }, [isAddModalOpen, isEditModalOpen]);
 
@@ -324,15 +325,16 @@ export function Blogs() {
       {/* Add Blog Sidebar */}
       {isAddModalOpen && (
         <>
+          {/* Backdrop with blur - covers everything including sidebar */}
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[55] transition-opacity duration-300"
             onClick={() => {
               setIsAddModalOpen(false);
               resetForm();
             }}
           />
           <aside
-            className={`fixed top-0 right-0 z-50 h-screen w-[500px] bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
+            className={`fixed top-0 right-0 z-[60] h-screen w-[500px] bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
               isAddModalOpen ? "translate-x-0" : "translate-x-[500px]"
             }`}
           >
@@ -489,8 +491,9 @@ export function Blogs() {
       {/* Edit Blog Sidebar */}
       {isEditModalOpen && selectedBlog && (
         <>
+          {/* Backdrop with blur - covers everything including sidebar */}
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[55] transition-opacity duration-300"
             onClick={() => {
               setIsEditModalOpen(false);
               setSelectedBlog(null);
@@ -498,7 +501,7 @@ export function Blogs() {
             }}
           />
           <aside
-            className={`fixed top-0 right-0 z-50 h-screen w-[500px] bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
+            className={`fixed top-0 right-0 z-[60] h-screen w-[500px] bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
               isEditModalOpen ? "translate-x-0" : "translate-x-[500px]"
             }`}
           >

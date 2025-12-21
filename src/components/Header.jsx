@@ -28,9 +28,53 @@ const Header = ({ onContactClick }) => {
   const [error, setError] = useState('');
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const womenDropdownRef = useRef(null);
   const menDropdownRef = useRef(null);
   const loginModalRef = useRef(null);
+  const searchRef = useRef(null);
+
+  // Search functionality
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      const searchTimeout = setTimeout(() => {
+        performSearch(searchQuery.trim());
+      }, 300); // Debounce search by 300ms
+
+      return () => clearTimeout(searchTimeout);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
+  const performSearch = async (query) => {
+    try {
+      setSearchLoading(true);
+      const response = await fetch(`${API_ENDPOINTS.PRODUCTS.GET_ALL}?isActive=true`);
+      const data = await response.json();
+
+      if (data.success) {
+        // Filter products by search query (search in product name, description, category, subcategory)
+        const filtered = (data.data.products || []).filter((product) => {
+          const searchLower = query.toLowerCase();
+          return (
+            product.productName?.toLowerCase().includes(searchLower) ||
+            product.description?.toLowerCase().includes(searchLower) ||
+            product.category?.toLowerCase().includes(searchLower) ||
+            product.subCategory?.toLowerCase().includes(searchLower)
+          );
+        });
+        setSearchResults(filtered.slice(0, 5)); // Show top 5 results
+      }
+    } catch (err) {
+      console.error('Search error:', err);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -55,16 +99,24 @@ const Header = ({ onContactClick }) => {
           setIsLoginOpen(false);
         }
       }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        const searchButton = event.target.closest('button');
+        if (!searchButton || !searchButton.querySelector('svg[class*="FiSearch"]')) {
+          setIsSearchOpen(false);
+          setSearchQuery('');
+          setSearchResults([]);
+        }
+      }
     };
 
-    if (isWomenClicked || isMenClicked || isLoginOpen) {
+    if (isWomenClicked || isMenClicked || isLoginOpen || isSearchOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isWomenClicked, isMenClicked, isLoginOpen]);
+  }, [isWomenClicked, isMenClicked, isLoginOpen, isSearchOpen]);
 
   const menuItems = [
     {
@@ -209,9 +261,103 @@ const Header = ({ onContactClick }) => {
 
           {/* Right Icons - Search, Shopping Cart, Login */}
           <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
-            <button className="p-1.5 sm:p-2 hover:bg-gray-900 rounded-full transition-colors">
-              <FiSearch className="w-4 h-4 sm:w-5 sm:h-5 text-gray-200" />
-            </button>
+            <div className="relative" ref={searchRef}>
+              <button 
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className="p-1.5 sm:p-2 hover:bg-gray-900 rounded-full transition-colors"
+              >
+                <FiSearch className="w-4 h-4 sm:w-5 sm:h-5 text-gray-200" />
+              </button>
+              
+              {/* Search Dropdown */}
+              {isSearchOpen && (
+                <div className="absolute top-full right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-md bg-black border border-gray-700 shadow-xl rounded-lg z-50">
+                  <div className="p-4">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search products..."
+                      className="w-full bg-gray-900 border border-gray-700 text-white px-4 py-2 rounded focus:outline-none focus:border-gray-500 transition-colors"
+                      style={{ fontFamily: "'Poppins', sans-serif" }}
+                      autoFocus
+                    />
+                  </div>
+                  
+                  {/* Search Results */}
+                  {searchQuery.trim().length > 0 && (
+                    <div className="max-h-96 overflow-y-auto border-t border-gray-700">
+                      {searchLoading ? (
+                        <div className="p-4 text-center">
+                          <p className="text-gray-400 text-sm" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                            Searching...
+                          </p>
+                        </div>
+                      ) : searchResults.length === 0 ? (
+                        <div className="p-4 text-center">
+                          <p className="text-gray-400 text-sm" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                            No products found
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {searchResults.map((product) => (
+                            <div
+                              key={product._id}
+                              onClick={() => {
+                                navigate(`/product/${product._id}`);
+                                setIsSearchOpen(false);
+                                setSearchQuery('');
+                                setSearchResults([]);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className="p-3 hover:bg-gray-900 cursor-pointer border-b border-gray-800 last:border-b-0"
+                            >
+                              <div className="flex items-center gap-3">
+                                {product.images && product.images.length > 0 ? (
+                                  <img
+                                    src={product.images[0]}
+                                    alt={product.productName}
+                                    className="w-12 h-12 object-cover rounded"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 bg-gray-800 rounded flex items-center justify-center">
+                                    <span className="text-gray-500 text-xs">No Image</span>
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-white text-sm font-medium truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                                    {product.productName}
+                                  </p>
+                                  <p className="text-gray-400 text-xs" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                                    Rs. {(product.salePrice || product.originalPrice)?.toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          <div className="p-3 border-t border-gray-700">
+                            <button
+                              onClick={() => {
+                                navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+                                setIsSearchOpen(false);
+                                setSearchQuery('');
+                                setSearchResults([]);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className="w-full text-center text-blue-400 hover:text-blue-300 text-sm"
+                              style={{ fontFamily: "'Poppins', sans-serif" }}
+                            >
+                              View all results for "{searchQuery}"
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <button 
               className="p-1.5 sm:p-2 hover:bg-gray-900 rounded-full relative transition-colors"
               onClick={() => {

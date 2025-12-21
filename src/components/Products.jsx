@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { API_ENDPOINTS } from '@/config/api';
 
@@ -7,6 +7,8 @@ const Products = () => {
   const { category, subcategory } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
   
   // Check if it's a special route (rings, chain, earrings, bracelets)
   const isSpecialRoute = location.pathname.includes('/products/rings') || 
@@ -57,6 +59,32 @@ const Products = () => {
       try {
         setLoading(true);
         setError('');
+        
+        // If search query exists, fetch all products
+        if (searchQuery.trim().length > 0) {
+          const response = await fetch(`${API_ENDPOINTS.PRODUCTS.GET_ALL}?isActive=true`);
+          const data = await response.json();
+
+          if (data.success) {
+            // Map API products to component format
+            const mappedProducts = (data.data.products || []).map((product) => ({
+              id: product._id,
+              _id: product._id,
+              name: product.productName,
+              price: product.salePrice || product.originalPrice,
+              originalPrice: product.originalPrice,
+              salePrice: product.salePrice,
+              onSale: !!product.salePrice,
+              image: product.images && product.images.length > 0 ? product.images[0] : '',
+              tagline: product.tagline || null,
+            }));
+            setProducts(mappedProducts);
+          } else {
+            setError(data.message || 'Failed to fetch products');
+          }
+          setLoading(false);
+          return;
+        }
         
         // Build query params
         const params = new URLSearchParams();
@@ -156,7 +184,7 @@ const Products = () => {
     };
 
     fetchProducts();
-  }, [category, subcategory]);
+  }, [category, subcategory, searchQuery]);
 
   // Scroll to top on component mount and page change
   useEffect(() => {
@@ -165,6 +193,9 @@ const Products = () => {
 
   // Get page title
   const getPageTitle = () => {
+    if (searchQuery.trim().length > 0) {
+      return `Search Results for "${searchQuery}"`;
+    }
     if (isSpecialRoute) {
       const productType = getProductType();
       if (productType) {
@@ -187,6 +218,17 @@ const Products = () => {
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...products];
+
+    // Apply search filter if search query exists
+    if (searchQuery.trim().length > 0) {
+      const searchLower = searchQuery.toLowerCase();
+      filtered = filtered.filter((product) => {
+        return (
+          product.name?.toLowerCase().includes(searchLower) ||
+          product.tagline?.toLowerCase().includes(searchLower)
+        );
+      });
+    }
 
     // Apply availability filter
     if (availabilityFilter === 'in-stock') {
@@ -234,7 +276,7 @@ const Products = () => {
     }
 
     return filtered;
-  }, [products, availabilityFilter, priceFilter, sortBy]);
+  }, [products, availabilityFilter, priceFilter, sortBy, searchQuery]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredAndSortedProducts.length / productsPerPage);
@@ -245,7 +287,7 @@ const Products = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [availabilityFilter, priceFilter, sortBy]);
+  }, [availabilityFilter, priceFilter, sortBy, searchQuery]);
 
   // Generate page numbers
   const getPageNumbers = () => {

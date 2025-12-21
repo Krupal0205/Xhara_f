@@ -14,12 +14,14 @@ import {
 } from "@material-tailwind/react";
 import { TrashIcon, PencilIcon } from "@heroicons/react/24/solid";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
+import { ConfirmModal } from "@/widgets/layout";
 import { API_ENDPOINTS } from "@/config/api";
 
 export function Contacts() {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confirmModal, setConfirmModal] = useState({ open: false, contactId: null });
 
   useEffect(() => {
     fetchContacts();
@@ -69,27 +71,48 @@ export function Contacts() {
     }
   };
 
-  const handleDelete = async (contactId) => {
-    if (window.confirm('Are you sure you want to delete this contact?')) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(API_ENDPOINTS.CONTACTS.DELETE(contactId), {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (response.ok) {
-          fetchContacts();
+  const handleDeleteClick = (contactId) => {
+    setConfirmModal({ open: true, contactId });
+  };
+
+  const handleDelete = async () => {
+    const contactId = confirmModal.contactId;
+    if (!contactId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.CONTACTS.DELETE(contactId), {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      } catch (err) {
-        console.error('Delete contact error:', err);
+      });
+      if (response.ok) {
+        fetchContacts();
+      } else {
+        const data = await response.json();
+        setError(data.message || "Failed to delete contact");
       }
+    } catch (err) {
+      console.error('Delete contact error:', err);
+      setError("Network error. Please check if backend server is running.");
+    } finally {
+      setConfirmModal({ open: false, contactId: null });
     }
   };
 
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
+      <ConfirmModal
+        open={confirmModal.open}
+        onClose={() => setConfirmModal({ open: false, contactId: null })}
+        onConfirm={handleDelete}
+        title="Delete Contact"
+        message="Are you sure you want to delete this contact? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmColor="red"
+      />
       <Card className="border border-blue-gray-100 shadow-sm">
         <CardHeader
           variant="gradient"
@@ -100,7 +123,7 @@ export function Contacts() {
             Contact Submissions
           </Typography>
         </CardHeader>
-        <CardBody className="px-0 pt-0 pb-2 overflow-x-scroll">
+        <CardBody className="px-0 pt-0 pb-2 ">
           {loading ? (
             <div className="text-center py-12">
               <Typography variant="h6" color="blue-gray" className="mb-2">
@@ -126,7 +149,7 @@ export function Contacts() {
             <table className="w-full min-w-[640px] table-auto">
               <thead>
                 <tr>
-                  {["Name", "Email", "Phone", "Message", "Status", "Date", "Actions"].map((el) => (
+                  {["Name", "Email", "Phone", "Message", "Date", "Actions"].map((el) => (
                     <th
                       key={el}
                       className="border-b border-blue-gray-50 py-3 px-5 text-left"
@@ -179,13 +202,6 @@ export function Contacts() {
                         </Typography>
                       </td>
                       <td className={className}>
-                        <Chip
-                          value={contact.status === 'new' ? 'New' : contact.status === 'read' ? 'Read' : 'Replied'}
-                          color={contact.status === 'new' ? 'blue' : contact.status === 'read' ? 'gray' : 'green'}
-                          size="sm"
-                        />
-                      </td>
-                      <td className={className}>
                         <Typography className="text-xs font-normal text-blue-gray-600">
                           {new Date(contact.createdAt).toLocaleDateString()}
                         </Typography>
@@ -201,27 +217,9 @@ export function Contacts() {
                             </IconButton>
                           </MenuHandler>
                           <MenuList>
-                            {contact.status === 'new' && (
-                              <MenuItem
-                                className="flex items-center gap-2"
-                                onClick={() => handleStatusUpdate(contact._id, 'read')}
-                              >
-                                <PencilIcon className="h-4 w-4" />
-                                Mark as Read
-                              </MenuItem>
-                            )}
-                            {contact.status === 'read' && (
-                              <MenuItem
-                                className="flex items-center gap-2"
-                                onClick={() => handleStatusUpdate(contact._id, 'replied')}
-                              >
-                                <PencilIcon className="h-4 w-4" />
-                                Mark as Replied
-                              </MenuItem>
-                            )}
                             <MenuItem
                               className="flex items-center gap-2 text-red-600"
-                              onClick={() => handleDelete(contact._id)}
+                              onClick={() => handleDeleteClick(contact._id)}
                             >
                               <TrashIcon className="h-4 w-4" />
                               Delete

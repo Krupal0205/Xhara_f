@@ -78,6 +78,19 @@ export function AddCompleteSetPanel({ open, onClose, onSuccess, editingSet }) {
     }
   }, [open, selectedCategory, editingSet]);
 
+  // Prevent body scroll when panel is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [open]);
+
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -252,12 +265,17 @@ export function AddCompleteSetPanel({ open, onClose, onSuccess, editingSet }) {
 
   return (
     <>
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
-        onClick={onClose}
-      />
+      {/* Backdrop with blur - covers everything including sidebar */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[55] transition-opacity duration-300"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Add Complete Set Panel */}
       <aside
-        className={`fixed top-0 right-0 z-50 h-screen w-[500px] bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
+        className={`fixed top-0 right-0 z-[60] h-screen w-[500px] bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
           open ? "translate-x-0" : "translate-x-[500px]"
         }`}
       >

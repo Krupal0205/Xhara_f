@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import {
   Button,
@@ -38,10 +38,21 @@ export function AddProductPanel() {
   const [editingProductId, setEditingProductId] = React.useState(null);
   const isLoadingEditData = React.useRef(false);
 
-  React.useEffect(() => {
+  // Prevent body scroll when panel is open
+  useEffect(() => {
     if (openAddProduct) {
       document.body.style.overflow = "hidden";
-      
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [openAddProduct]);
+
+  React.useEffect(() => {
+    if (openAddProduct) {
       // Check if editing a product
       const editingProductStr = localStorage.getItem('editingProduct');
       if (editingProductStr) {
@@ -113,14 +124,10 @@ export function AddProductPanel() {
         setIncludeInGift(false);
       }
     } else {
-      document.body.style.overflow = "";
       // Clear editing product when panel closes
       localStorage.removeItem('editingProduct');
       setEditingProductId(null);
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
   }, [openAddProduct]);
 
   // Reset sub-category when category changes (only for new products, not when editing)
@@ -396,11 +403,21 @@ export function AddProductPanel() {
   };
 
   return (
-    <aside
-      className={`fixed top-0 right-0 z-50 h-screen w-[500px] bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
-        openAddProduct ? "translate-x-0" : "translate-x-[500px]"
-      }`}
-    >
+    <>
+      {/* Backdrop with blur - covers everything including sidebar */}
+      {openAddProduct && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[55] transition-opacity duration-300"
+          onClick={() => setOpenAddProduct(dispatch, false)}
+        />
+      )}
+      
+      {/* Add Product Panel */}
+      <aside
+        className={`fixed top-0 right-0 z-[60] h-screen w-[500px] bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
+          openAddProduct ? "translate-x-0" : "translate-x-[500px]"
+        }`}
+      >
       <div className="flex items-start justify-between px-6 pt-8 pb-6">
         <div>
           <Typography variant="h5" color="blue-gray">
@@ -728,6 +745,7 @@ export function AddProductPanel() {
         </div>
       </div>
     </aside>
+    </>
   );
 }
 
