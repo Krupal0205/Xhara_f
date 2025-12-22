@@ -66,15 +66,15 @@ const Gifting = () => {
 
         // Map products to component format
         const mappedProducts = (productsData.data?.products || []).map((product) => ({
-          id: product._id,
+            id: product._id,
           _id: product._id,
-          name: product.productName,
-          price: product.salePrice || product.originalPrice,
-          originalPrice: product.originalPrice,
-          salePrice: product.salePrice,
-          onSale: !!product.salePrice,
-          image: product.images && product.images.length > 0 ? product.images[0] : '',
-          tagline: product.tagline || null,
+            name: product.productName,
+            price: product.salePrice || product.originalPrice,
+            originalPrice: product.originalPrice,
+            salePrice: product.salePrice,
+            onSale: !!product.salePrice,
+            image: product.images && product.images.length > 0 ? product.images[0] : '',
+            tagline: product.tagline || null,
           type: 'product'
         }));
 
@@ -302,7 +302,7 @@ const Gifting = () => {
                 if (product.type === 'complete-set') {
                   navigate('/complete-sets');
                 } else {
-                  navigate(`/product/${product._id || product.id}`);
+                navigate(`/product/${product._id || product.id}`);
                 }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
