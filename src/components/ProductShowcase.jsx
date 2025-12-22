@@ -261,10 +261,10 @@ const ProductShowcase = () => {
               ))}
             </div>
           ) : (
-            <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max pb-4 pl-3 sm:pl-4 md:pl-6 pr-3 sm:pr-4 md:pr-6">
+          <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max pb-4 pl-3 sm:pl-4 md:pl-6 pr-3 sm:pr-4 md:pr-6">
               {displayedSets.map((set) => (
                 <ProductCard key={set.id} product={set} showSale={true} />
-              ))}
+            ))}
               {/* View All Card - Only show if there are more than 6 sets */}
               {hasMoreSets && (
                 <div 
@@ -274,7 +274,7 @@ const ProductShowcase = () => {
                   }}
                   className="bg-[#1a1a1a] rounded-lg min-w-[280px] sm:min-w-[320px] md:min-w-[350px] lg:min-w-[400px] flex-shrink-0 h-[400px] sm:h-[450px] md:h-[500px] flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors"
                 >
-                  <p className="text-white text-lg sm:text-xl font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>View all</p>
+              <p className="text-white text-lg sm:text-xl font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>View all</p>
                 </div>
               )}
             </div>
@@ -329,12 +329,12 @@ const ProductShowcase = () => {
                 ))}
               </div>
             ) : (
-              <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max pb-4 pl-3 sm:pl-4 md:pl-6 pr-3 sm:pr-4 md:pr-6">
+            <div className="flex gap-3 sm:gap-4 md:gap-6 min-w-max pb-4 pl-3 sm:pl-4 md:pl-6 pr-3 sm:pr-4 md:pr-6">
                 {displayedCategoryProducts.length > 0 ? (
                   <>
                     {displayedCategoryProducts.map((product) => (
                       <CategoryCard key={product.id} product={product} />
-                    ))}
+              ))}
                     {/* View All Card - Only show if there are more than 6 products */}
                     {hasMoreProducts && (
                       <div 
@@ -347,8 +347,8 @@ const ProductShowcase = () => {
                         }}
                         className="bg-[#1B1B1B] rounded-lg min-w-[200px] sm:min-w-[240px] md:min-w-[280px] lg:min-w-[320px] flex-shrink-0 h-[350px] sm:h-[380px] md:h-[420px] lg:h-[350px] flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-all duration-300"
                       >
-                        <FiArrowRight className="text-white w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 sm:mb-3" />
-                        <p className="text-white text-sm sm:text-base md:text-lg font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>View all</p>
+                <FiArrowRight className="text-white w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 sm:mb-3" />
+                <p className="text-white text-sm sm:text-base md:text-lg font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>View all</p>
                       </div>
                     )}
                   </>

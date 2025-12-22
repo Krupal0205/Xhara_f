@@ -44,7 +44,7 @@ const Contact = ({ onBack }) => {
 
       if (data.success) {
         setAlertModal({ open: true, message: data.message || 'Thank you for your message! We will get back to you soon.' });
-        setFormData({ name: '', email: '', phone: '', comment: '' });
+    setFormData({ name: '', email: '', phone: '', comment: '' });
       } else {
         setAlertModal({ open: true, message: data.message || 'Failed to submit form. Please try again.' });
       }

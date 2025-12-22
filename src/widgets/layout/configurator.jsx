@@ -99,11 +99,11 @@ export function Configurator() {
       )}
       
       {/* Configurator Panel */}
-      <aside
+    <aside
         className={`fixed top-0 right-0 z-[60] h-screen w-96 bg-white px-2.5 shadow-lg transition-transform duration-300 overflow-y-auto ${
-          openConfigurator ? "translate-x-0" : "translate-x-96"
-        }`}
-      >
+        openConfigurator ? "translate-x-0" : "translate-x-96"
+      }`}
+    >
       <div className="flex items-start justify-between px-6 pt-8 pb-6">
         <div>
           <Typography variant="h5" color="blue-gray">

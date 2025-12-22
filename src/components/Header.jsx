@@ -19,6 +19,8 @@ const Header = ({ onContactClick }) => {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [showCodeInput, setShowCodeInput] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [verifiedOtp, setVerifiedOtp] = useState('');
   const [authView, setAuthView] = useState('login'); // 'login', 'signup', 'forgot'
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -266,8 +268,8 @@ const Header = ({ onContactClick }) => {
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
                 className="p-1.5 sm:p-2 hover:bg-gray-900 rounded-full transition-colors"
               >
-                <FiSearch className="w-4 h-4 sm:w-5 sm:h-5 text-gray-200" />
-              </button>
+              <FiSearch className="w-4 h-4 sm:w-5 sm:h-5 text-gray-200" />
+            </button>
               
               {/* Search Dropdown */}
               {isSearchOpen && (
@@ -626,7 +628,7 @@ const Header = ({ onContactClick }) => {
               {authView === 'signup' 
                 ? 'Create a new account' 
                 : authView === 'forgot'
-                ? 'Enter your email to reset password'
+                ? 'Enter your email to receive OTP'
                 : 'Sign in or create an account'}
             </p>
 
@@ -975,6 +977,8 @@ const Header = ({ onContactClick }) => {
 
               {authView === 'forgot' && (
                 <>
+                  {!showCodeInput ? (
+                <>
                   {/* Email Input */}
                   <div>
                     <label className="block text-gray-300 text-sm mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
@@ -990,7 +994,7 @@ const Header = ({ onContactClick }) => {
                     />
                   </div>
 
-                  {/* Reset Password Button */}
+                      {/* Send OTP Button */}
                   <button 
                     onClick={async () => {
                       if (!email.trim()) {
@@ -1002,21 +1006,242 @@ const Header = ({ onContactClick }) => {
                       setError('');
 
                       try {
-                        // Simulate API call (replace with actual API endpoint when available)
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        
-                        setSuccessMessage('Password reset link has been sent to your email');
+                            const response = await fetch(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({ email: email.trim() }),
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                              setShowCodeInput(true);
+                              setError(''); // Clear any previous errors
+                            } else {
+                              setError(data.message || 'Failed to send OTP. Please try again.');
+                            }
+                          } catch (err) {
+                            console.error('Send OTP error:', err);
+                            setError('Network error. Please check if backend server is running.');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        disabled={loading}
+                        className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
+                        style={{ fontFamily: "'Poppins', sans-serif" }}
+                      >
+                        {loading && (
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        )}
+                        {loading ? 'Sending...' : 'Send OTP'}
+                      </button>
+                    </>
+                  ) : !otpVerified ? (
+                    <>
+                      {/* OTP Input */}
+                      <div>
+                        <label className="block text-gray-300 text-sm mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                          Enter OTP
+                        </label>
+                        <input
+                          type="text"
+                          value={code}
+                          onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="Enter 6-digit OTP"
+                          className="w-full bg-gray-800 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-gray-500 transition-colors text-center text-2xl tracking-widest"
+                          style={{ fontFamily: "'Poppins', sans-serif" }}
+                          maxLength={6}
+                        />
+                        <p className="text-gray-400 text-xs mt-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                          OTP sent to {email}
+                        </p>
+                      </div>
+
+                      {/* Verify OTP Button */}
+                      <button 
+                        onClick={async () => {
+                          if (!code.trim() || code.length !== 6) {
+                            setError('Please enter a valid 6-digit OTP');
+                            return;
+                          }
+
+                          setLoading(true);
+                          setError('');
+
+                          try {
+                            // Verify OTP by attempting to reset with a dummy password
+                            // If OTP is valid, we'll show password fields
+                            // We'll actually verify and reset in the reset password step
+                            setVerifiedOtp(code);
+                            setOtpVerified(true);
+                            setCode('');
+                          } catch (err) {
+                            setError('Invalid OTP. Please try again.');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        disabled={loading || code.length !== 6}
+                        className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
+                        style={{ fontFamily: "'Poppins', sans-serif" }}
+                      >
+                        {loading && (
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        )}
+                        {loading ? 'Verifying...' : 'Verify OTP'}
+                      </button>
+
+                      {/* Resend OTP Link */}
+                      <div className="text-center">
+                        <button 
+                          onClick={async () => {
+                            setCode('');
+                            setOtpVerified(false);
+                            setVerifiedOtp('');
+                            setError('');
+                            
+                            // Resend OTP
+                            setLoading(true);
+                            try {
+                              const response = await fetch(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ email: email.trim() }),
+                              });
+
+                              const data = await response.json();
+
+                              if (data.success) {
+                                setError(''); // Clear any previous errors
+                                // OTP resent, no popup needed
+                              } else {
+                                setError(data.message || 'Failed to resend OTP. Please try again.');
+                              }
+                            } catch (err) {
+                              console.error('Resend OTP error:', err);
+                              setError('Network error. Please try again.');
+                            } finally {
+                              setLoading(false);
+                            }
+                          }}
+                          disabled={loading}
+                          className="text-blue-400 hover:text-blue-300 text-sm disabled:opacity-50"
+                          style={{ fontFamily: "'Poppins', sans-serif" }}
+                        >
+                          {loading ? 'Resending...' : 'Resend OTP'}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* New Password Input */}
+                      <div>
+                        <label className="block text-gray-300 text-sm mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                          New Password
+                        </label>
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Enter new password"
+                          className="w-full bg-gray-800 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-gray-500 transition-colors"
+                          style={{ fontFamily: "'Poppins', sans-serif" }}
+                        />
+                      </div>
+
+                      {/* Confirm Password Input */}
+                      <div>
+                        <label className="block text-gray-300 text-sm mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                          Confirm Password
+                        </label>
+                        <input
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Confirm new password"
+                          className="w-full bg-gray-800 border border-gray-700 text-white px-4 py-3 rounded focus:outline-none focus:border-gray-500 transition-colors"
+                          style={{ fontFamily: "'Poppins', sans-serif" }}
+                        />
+                        {confirmPassword && password !== confirmPassword && (
+                          <p className="text-red-400 text-xs mt-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                            Passwords do not match
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Reset Password Button */}
+                      <button 
+                        onClick={async () => {
+                          if (!password.trim() || !confirmPassword.trim()) {
+                            setError('Please fill in all fields');
+                            return;
+                          }
+
+                          if (password !== confirmPassword) {
+                            setError('Passwords do not match');
+                            return;
+                          }
+
+                          if (password.length < 6) {
+                            setError('Password must be at least 6 characters');
+                            return;
+                          }
+
+                          setLoading(true);
+                          setError('');
+
+                          try {
+                            const response = await fetch(API_ENDPOINTS.AUTH.RESET_PASSWORD, {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                email: email.trim(),
+                                otp: verifiedOtp,
+                                password: password.trim()
+                              }),
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                              setSuccessMessage('Password has been reset successfully! You can now login with your new password.');
                         setShowSuccessPopup(true);
+                              // Close modal and reset form after showing popup
+                              setTimeout(() => {
                         setIsLoginOpen(false);
                         setAuthView('login');
                         setEmail('');
+                                setCode('');
+                                setPassword('');
+                                setConfirmPassword('');
+                                setShowCodeInput(false);
+                                setOtpVerified(false);
+                                setVerifiedOtp('');
+                              }, 100);
+                            } else {
+                              setError(data.message || 'Failed to reset password. Please try again.');
+                            }
                       } catch (err) {
-                        setError('Failed to send reset link. Please try again.');
+                            console.error('Reset password error:', err);
+                            setError('Network error. Please check if backend server is running.');
                       } finally {
                         setLoading(false);
                       }
                     }}
-                    disabled={loading}
+                        disabled={loading || password !== confirmPassword || password.length < 6}
                     className="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" 
                     style={{ fontFamily: "'Poppins', sans-serif" }}
                   >
@@ -1026,13 +1251,32 @@ const Header = ({ onContactClick }) => {
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                     )}
-                    {loading ? 'Sending...' : 'Send reset link'}
+                        {loading ? 'Resetting...' : 'Reset Password'}
                   </button>
+                    </>
+                  )}
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded text-sm">
+                      {error}
+                    </div>
+                  )}
 
                   {/* Back to Sign In Link */}
                   <div className="text-center pt-4">
                     <button 
-                      onClick={() => setAuthView('login')}
+                      onClick={() => {
+                        setAuthView('login');
+                        setShowCodeInput(false);
+                        setOtpVerified(false);
+                        setCode('');
+                        setVerifiedOtp('');
+                        setEmail('');
+                        setPassword('');
+                        setConfirmPassword('');
+                        setError('');
+                      }}
                       className="text-blue-400 hover:text-blue-300 text-sm underline"
                       style={{ fontFamily: "'Poppins', sans-serif" }}
                     >

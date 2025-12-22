@@ -23,12 +23,25 @@ export function User() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setError("");
+      
       const token = localStorage.getItem("token");
       
       if (!token) {
         setError("Please login to view users");
         setLoading(false);
         return;
+      }
+
+      // Check if user is admin
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.role !== "admin") {
+          setError("Access denied. Admin privileges required.");
+          setLoading(false);
+          return;
+        }
       }
 
       const response = await fetch(API_ENDPOINTS.AUTH.GET_ALL_USERS, {
@@ -41,7 +54,16 @@ export function User() {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("userLoggedIn");
+        localStorage.removeItem("adminLoggedIn");
+        setError("Session expired. Please login again.");
+      } else if (response.status === 403) {
+        setError("Access denied. Admin privileges required.");
+      } else if (data.success) {
         setUsers(data.data.users);
         setError("");
       } else {

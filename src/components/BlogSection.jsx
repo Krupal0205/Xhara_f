@@ -66,7 +66,7 @@ const BlogSection = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mb-6 sm:mb-8">
               {displayedBlogs.map((blog) => (
                 <article 
                   key={blog._id} 
@@ -76,16 +76,16 @@ const BlogSection = () => {
                   }}
                   className="bg-[#f6f5ec] rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                 >
-                  <div className="aspect-video overflow-hidden bg-gray-100">
+              <div className="aspect-video overflow-hidden bg-gray-100">
                     {blog.image ? (
-                      <img src={blog.image} alt={blog.title} className="w-full h-full object-cover" />
+                <img src={blog.image} alt={blog.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-200">
                         <span className="text-gray-400 text-sm">No Image</span>
                       </div>
                     )}
-                  </div>
-                  <div className="p-4 sm:p-6">
+              </div>
+              <div className="p-4 sm:p-6">
                     <p className="text-xs sm:text-sm text-gray-700 mb-2 font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>
                       {formatDate(blog.createdAt)}
                     </p>
@@ -95,12 +95,12 @@ const BlogSection = () => {
                     <p className="text-gray-700 line-clamp-3 text-sm sm:text-base" style={{ fontFamily: "'Poppins', sans-serif" }}>
                       {getExcerpt(blog.content)}
                     </p>
-                  </div>
-                </article>
-              ))}
-            </div>
+              </div>
+            </article>
+          ))}
+        </div>
             {hasMoreBlogs && (
-              <div className="text-center">
+        <div className="text-center">
                 <button 
                   onClick={() => {
                     navigate('/blogs');
@@ -109,9 +109,9 @@ const BlogSection = () => {
                   className="bg-white text-black px-6 sm:px-8 py-2 sm:py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors text-sm sm:text-base" 
                   style={{ fontFamily: "'Poppins', sans-serif" }}
                 >
-                  View all
-                </button>
-              </div>
+            View all
+          </button>
+        </div>
             )}
           </>
         )}
